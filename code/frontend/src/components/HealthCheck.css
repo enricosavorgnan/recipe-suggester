@@ -1,0 +1,60 @@
+.health-check {
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 500px;
+}
+
+.health-check h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-indicator.healthy .status-dot {
+  background-color: #4caf50;
+}
+
+.status-indicator.unhealthy .status-dot {
+  background-color: #f44336;
+}
+
+.status-indicator.unknown .status-dot {
+  background-color: #ff9800;
+}
+
+.status-text {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.health-check button {
+  margin-top: 1rem;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  transition: border-color 0.25s;
+}
+
+.health-check button:hover {
+  border-color: #646cff;
+}
