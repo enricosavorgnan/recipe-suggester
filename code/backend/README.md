@@ -7,32 +7,66 @@ FastAPI backend for the Recipe Suggester application.
 ```
 backend/
 ├── app/
-│   ├── __init__.py
 │   ├── main.py              # FastAPI application entry point
 │   ├── config/
-│   │   ├── __init__.py
-│   │   └── settings.py      # Application settings
+│   │   └── settings.py      # Environment-aware settings
 │   ├── db/
-│   │   ├── __init__.py
-│   │   └── database.py      # Database connection setup
+│   │   └── database.py      # Database connection
 │   ├── models/              # SQLAlchemy models
-│   │   └── __init__.py
 │   ├── routes/              # API routes
-│   │   ├── __init__.py
-│   │   └── health.py        # Health check endpoints
 │   └── services/            # Business logic
-│       └── __init__.py
+├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
 └── README.md
 ```
 
+## Environment Configuration
+
+This project supports three environments:
+- **local**: Local development (services on localhost)
+- **docker**: Docker Compose deployment (services use container names)
+- **production**: Production deployment
+
+Configure via `ENVIRONMENT` variable in `.env` file.
+
 ## Setup
 
-1. Create a virtual environment:
+### 1. Create `.env` file
+
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+cp .env.example .env
+```
+
+### 2. Configure environment variables
+
+Edit `.env` and set `ENVIRONMENT`:
+
+**For local development:**
+```bash
+ENVIRONMENT=local
+POSTGRES_SERVER=localhost
+```
+
+**For Docker deployment:**
+```bash
+ENVIRONMENT=docker
+POSTGRES_SERVER=postgres
+```
+
+## Running Locally
+
+### Prerequisites
+- Python 3.11+
+- PostgreSQL (running on localhost:5432)
+
+### Steps
+
+1. Create and activate virtual environment:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
 
 2. Install dependencies:
@@ -40,31 +74,56 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file from `.env.example`:
-```bash
-cp .env.example .env
-```
+3. Ensure `.env` has `ENVIRONMENT=local`
 
-4. Update the `.env` file with PostgreSQL credentials (for now just initialization, we don't do that immediately)
-
-## Running the Application
-
-Run the FastAPI application with uvicorn:
-
+4. Start the server:
 ```bash
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`
+API available at: `http://localhost:8000`
+
+## Running with Docker Compose
+
+### Prerequisites
+- Docker
+- Docker Compose
+
+### Steps
+
+1. Ensure `.env` has `ENVIRONMENT=docker`
+
+2. Build and start services:
+```bash
+docker-compose up --build
+```
+
+This starts:
+- PostgreSQL on port 5432
+- Backend API on port 8000
+
+3. Stop services:
+```bash
+docker-compose down
+```
+
+4. Stop and remove volumes:
+```bash
+docker-compose down -v
+```
 
 ## API Documentation
 
-Once the application is running, you can access:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## Endpoints
+## Key Environment Variables
 
-- `GET /` - Root endpoint
-- `GET /health` - Health check endpoint
-- `GET /health/db` - Database health check endpoint
+| Variable | Description | Local | Docker |
+|----------|-------------|-------|--------|
+| `ENVIRONMENT` | Environment type | `local` | `docker` |
+| `POSTGRES_SERVER` | Database host | `localhost` | `postgres` |
+| `FRONTEND_URL` | CORS origin | `http://localhost:3000` | `http://localhost:3000` |
+| `DEBUG` | Debug mode | `True` | `True` |
+
+See `.env.example` for all variables.
