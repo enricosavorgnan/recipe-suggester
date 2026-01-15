@@ -1,21 +1,4 @@
-REQUIREMENTS
-
-User Requirements - High Level Idea
-
-
-System Requirements - Low level
-
-
-Functional VS Non-functional
-
-F: Functionalities of the service, how to react ot inputs, how to behave in particular situations, what the system should NOT do-
-
-NF: Constraints/Properties on the service, i.e. reliability, response time and storage, I/O capability, programming Language, dev method. LOOK AT THE MAP (Lect. 10, slide 15 )
-
-
-Follow the IEEE standard document (Lect. 10, slide 28)
-
-
+# SYSTEM SPECIFICATION DOCUMENT
 
 ## 1. Introduction
 
@@ -28,7 +11,7 @@ The product "Recipe Suggester Tool" will provide real-time, step-by-step and eas
 
 ### 1.3 Definitions, acronyms and abbreviations
 RST: Rec Suggester Tool, the name of the product
-bla bla bla
+[TODO]
 
 ---
 
@@ -39,12 +22,12 @@ The system architecture follows a Client-Server method. The user interact with t
 The web-app is connected to a backend through a Fast API .
 
 ### 2.2 Product function
-The user send to the frontend a picture of food - e.g. sending a picture of his/her fridge.
-The webapp sends the picture to the Backend.
-The backend loads a machine learning trained module and sends the picture to it.
-The ML module will be able to recognize specific types of food into the picture.
-The types of food recognized are then sent to an OpenAI LLM via API.
-The LLM will organize and builds a recipe based on the food recieved.
+The user send to the frontend a picture of food - e.g. sending a picture of a fridge. \
+The webapp sends the picture to the Backend. \
+The backend loads a machine learning trained module and sends the picture to it. \
+The ML module will be able to recognize specific types of food into the picture. \
+The types of food recognized are then sent to an OpenAI LLM via API. \
+The LLM will organize and builds a recipe based on the food recieved. \
 The recipe text will then be sent to the webapp in order to be shown to the user.
 
 ### 2.3 User characteristics
@@ -61,7 +44,7 @@ The percentage of data corruption on failure should be below 1%.
 The product should be unavailable for the 1% of the time at most
 
 ### 2.5 Assumptions and dependencies
-IDK yet
+[TODO]
 
 ---
 
@@ -69,6 +52,7 @@ IDK yet
 The following section will distinguish between Functional Requirements (FR, 3.1) and Non-functional requirements (NFR, 3.2).
 
 ### 3.1 Functional Requirements
+[TODO]
 - 3.1.01 FR: The system shall allow users to create an account using email or social authentication (Google, Meta, Apple).
 - 3.1.02 FR: The system shall allow users to share an image (ideally of food) with .
 - 3.1.03 FR: The system should be able to recognize the food types in the image sent by the user with a maximum delay of 2 seconds.
@@ -83,6 +67,7 @@ The following section will distinguish between Functional Requirements (FR, 3.1)
 - 3.1.12 FR: The system should block the user in case of multiple inappropriate content. (TBD)
 
 ### 3.2 Non-Functional Requirements
+[TODO]
 - 3.2.1 NFR: The system shall comply with the GDPR standards for user data privacy.
 - 3.2.2 NFR: The system shall ask the user for cookies usage, using the product CookieBot.
 - 3.2.3 NFR: The system shall be made up by two components: a front-end and a back-end.
@@ -104,4 +89,13 @@ The following section will distinguish between Functional Requirements (FR, 3.1)
 - 3.2.5 NFR: The file "recipe.json" should be sent to the frontend and the content shown.
 
 
-## 4. Appendices
+## 4. Project Architecture
+[TODO]
+### 4.1 Training, Validation, Deployment, Monitoring
+
+
+## 5. Risk Analysis
+[TODO]
+
+## 6. Appendices & Resources
+[TODO]
