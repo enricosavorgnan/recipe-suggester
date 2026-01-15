@@ -27,6 +27,5 @@ app.include_router(health.router, tags=["health"])
 def root():
     return {
         "message": "Welcome to Recipe Suggester API",
-        "environment": settings.ENVIRONMENT,
         "version": settings.API_VERSION
     }

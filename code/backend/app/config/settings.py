@@ -1,15 +1,13 @@
 from pydantic_settings import BaseSettings
-from typing import Literal, Optional
+from typing import Optional
 
 
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
-    Supports multiple environments: local, docker, production
+    Configuration is driven purely by env vars, not by environment type.
+    Works identically in local dev (uvicorn) and deployed (docker).
     """
-
-    # Environment configuration
-    ENVIRONMENT: Literal["local", "docker", "production"] = "local"
 
     # Application settings
     APP_NAME: str = "Recipe Suggester API"
@@ -38,7 +36,7 @@ class Settings(BaseSettings):
     @property
     def CORS_ORIGINS(self) -> list[str]:
         """
-        Get list of allowed CORS origins based on environment.
+        Get list of allowed CORS origins.
         Always includes FRONTEND_URL, plus any additional origins from ALLOWED_ORIGINS.
         """
         origins = [self.FRONTEND_URL]
@@ -48,21 +46,6 @@ class Settings(BaseSettings):
             origins.extend(additional_origins)
 
         return origins
-
-    @property
-    def is_production(self) -> bool:
-        """Check if running in production environment"""
-        return self.ENVIRONMENT == "production"
-
-    @property
-    def is_docker(self) -> bool:
-        """Check if running in Docker environment"""
-        return self.ENVIRONMENT == "docker"
-
-    @property
-    def is_local(self) -> bool:
-        """Check if running in local development environment"""
-        return self.ENVIRONMENT == "local"
 
     class Config:
         env_file = ".env"
