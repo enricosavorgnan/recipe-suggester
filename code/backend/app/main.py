@@ -1,17 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.config.settings import settings
 from app.routes import health
 
 app = FastAPI(
-    title="Recipe Suggester API",
+    title=settings.APP_NAME,
     description="Backend API for Recipe Suggester application",
-    version="0.1.0"
+    version=settings.API_VERSION,
+    debug=settings.DEBUG
 )
 
-# CORS middleware configuration
+# CORS middleware configuration - environment-aware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly in production
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -20,6 +22,10 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router, tags=["health"])
 
+
 @app.get("/")
 def root():
-    return {"message": "Welcome to Recipe Suggester API"}
+    return {
+        "message": "Welcome to Recipe Suggester API",
+        "version": settings.API_VERSION
+    }

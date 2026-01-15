@@ -7,32 +7,46 @@ FastAPI backend for the Recipe Suggester application.
 ```
 backend/
 ├── app/
-│   ├── __init__.py
 │   ├── main.py              # FastAPI application entry point
 │   ├── config/
-│   │   ├── __init__.py
-│   │   └── settings.py      # Application settings
+│   │   └── settings.py      # Environment-aware settings
 │   ├── db/
-│   │   ├── __init__.py
-│   │   └── database.py      # Database connection setup
+│   │   └── database.py      # Database connection
 │   ├── models/              # SQLAlchemy models
-│   │   └── __init__.py
 │   ├── routes/              # API routes
-│   │   ├── __init__.py
-│   │   └── health.py        # Health check endpoints
 │   └── services/            # Business logic
-│       └── __init__.py
 ├── requirements.txt
 ├── .env.example
 └── README.md
 ```
 
+## Configuration
+
+Configuration is driven purely by environment variables in `.env`.
+No environment-specific code paths - just change env vars.
+
 ## Setup
 
-1. Create a virtual environment:
+Create `.env` file:
+
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+cp .env.example .env
+```
+
+Default values are configured for local development.
+
+## Running Locally
+
+### Prerequisites
+- Python 3.11+
+- PostgreSQL (running on localhost:5432)
+
+### Steps
+
+1. Create and activate virtual environment:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
 
 2. Install dependencies:
@@ -40,31 +54,31 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file from `.env.example`:
-```bash
-cp .env.example .env
-```
-
-4. Update the `.env` file with PostgreSQL credentials (for now just initialization, we don't do that immediately)
-
-## Running the Application
-
-Run the FastAPI application with uvicorn:
-
+3. Start the server:
 ```bash
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`
+API available at: `http://localhost:8000`
 
 ## API Documentation
 
-Once the application is running, you can access:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## Endpoints
+## Key Environment Variables
 
-- `GET /` - Root endpoint
-- `GET /health` - Health check endpoint
-- `GET /health/db` - Database health check endpoint
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `POSTGRES_SERVER` | Database host | `localhost` |
+| `FRONTEND_URL` | CORS origin | `http://localhost:3000` |
+| `DEBUG` | Debug mode | `True` |
+| `API_URL` | Backend URL | `http://localhost:8000` |
+
+See `.env.example` for all variables.
+
+## Architecture Notes
+
+- Configuration is purely env-var driven
+- No environment-specific code paths
+- Same code works in local dev and deployed containers
