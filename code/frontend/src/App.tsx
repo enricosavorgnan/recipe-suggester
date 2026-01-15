@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import HealthCheck from './components/HealthCheck'
 import './App.css'
 

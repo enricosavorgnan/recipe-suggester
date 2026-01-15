@@ -111,3 +111,12 @@ jobs:
           tags: recipe-suggester-${{ matrix.component }}:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Status check job, require only this in branch protection
+  ci-passed:
+    name: All CI Checks Passed
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-build, docker-build-test]
+    steps:
+      - name: All checks passed
+        run: echo "All CI checks passed successfully"
