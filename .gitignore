@@ -1,2 +1,10 @@
-#IDE
+# IDE
 .idea
+.vscode
+.DS_Store
+
+# Environment
+.env
+
+# Docker volumes
+postgres_data/
