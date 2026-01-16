@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: recipe-suggester-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-recipe_suggester}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - recipe-network
+
+  # Backend API (from GitHub Container Registry)
+  backend:
+    image: ghcr.io/${GITHUB_REPO_OWNER:-username}/recipe-suggester-backend:latest
+    container_name: recipe-suggester-backend
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-recipe_suggester}
+      FRONTEND_URL: http://localhost:3000
+      API_URL: http://localhost:8000
+      DEBUG: ${DEBUG:-False}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - recipe-network
+
+  # Frontend (from GitHub Container Registry)
+  frontend:
+    image: ghcr.io/${GITHUB_REPO_OWNER:-username}/recipe-suggester-frontend:latest
+    container_name: recipe-suggester-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - recipe-network
+
+volumes:
+  postgres_data:
+
+networks:
+  recipe-network:
+    driver: bridge
