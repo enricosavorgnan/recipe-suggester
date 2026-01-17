@@ -70,7 +70,7 @@ The following section will distinguish between Functional Requirements (FR, 3.1)
 
 ### 3.1 Functional Requirements
 - 3.1.01 FR: The system shall allow users to create an account using email or social authentication (Google, Meta, Apple).
-- 3.1.02 FR: The system shall allow users to share an image (ideally of food) with .
+- 3.1.02 FR: The system shall allow users to share one or more images (ideally of food).
 - 3.1.03 FR: The system should be able to recognize the food types in the image sent by the user with a maximum delay of 2 seconds.
 - 3.1.04 FR: The system should write a .JSON file called "ingredients.json" with the types of food recognized.
 - 3.1.05 FR: The system should be able to send the file called "ingredients.json" to a defined online Large Language Model (LLM), e.g. OpenAI GPT-5.
