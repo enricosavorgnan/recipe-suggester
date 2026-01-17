@@ -1,23 +1,24 @@
-# Recipe Suggester Frontend
+# Recipe Suggester - Frontend
 
-React + TypeScript frontend for the Recipe Suggester application.
+A React application for recipe suggestions with authentication.
 
-## Setup & Run
+## Tech Stack
 
-1. Install dependencies:
-```bash
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## Getting Started
+
+```sh
+# Install dependencies
 npm install
-```
 
-2. Start development server:
-```bash
+# Start development server
 npm run dev
-```
 
-The app will run at `http://localhost:3000`
-
-## Build
-
-```bash
+# Build for production
 npm run build
 ```
