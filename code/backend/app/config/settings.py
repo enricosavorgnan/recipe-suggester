@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     # API settings
     API_URL: str = "http://localhost:8000"
 
+    # Authentication settings
+    SECRET_KEY: str = "your-secret-key-change-in-production-min-32-chars"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # Google OAuth settings
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+
     @property
     def DATABASE_URL(self) -> str:
         """Construct database URL from environment variables"""

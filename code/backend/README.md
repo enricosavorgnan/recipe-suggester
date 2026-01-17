@@ -54,12 +54,33 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Start the server:
+3. Run database migrations:
+```bash
+alembic upgrade head
+```
+
+4. Start the server:
 ```bash
 uvicorn app.main:app --reload
 ```
 
 API available at: `http://localhost:8000`
+
+## Database Migrations
+
+### Create New Migration
+When you add/modify models:
+```bash
+alembic revision --autogenerate -m "description"
+alembic upgrade head
+```
+
+### Common Commands
+```bash
+alembic current              # Current migration
+alembic history              # All migrations
+alembic downgrade -1         # Rollback one step
+```
 
 ## API Documentation
 
