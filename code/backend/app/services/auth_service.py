@@ -125,8 +125,25 @@ def get_google_auth_url() -> str:
     Returns:
         Authorization URL to redirect user to
     """
-    redirect_uri = f"{settings.API_URL}/auth/google/callback"
-    authorization_url = oauth.google.authorize_redirect_url(redirect_uri)
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET."
+        )
+
+    redirect_uri = f"{settings.FRONTEND_URL}/auth/google/callback"
+
+    # Build authorization URL manually
+    from urllib.parse import urlencode
+    params = {
+        'client_id': settings.GOOGLE_CLIENT_ID,
+        'redirect_uri': redirect_uri,
+        'response_type': 'code',
+        'scope': 'openid email profile',
+        'access_type': 'offline',
+        'prompt': 'consent'
+    }
+    authorization_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
     return authorization_url
 
 
@@ -144,22 +161,49 @@ async def handle_google_callback(db: Session, code: str) -> tuple[User, str]:
     Raises:
         HTTPException: If OAuth fails
     """
+    import httpx
+
     try:
         # Exchange code for token
-        redirect_uri = f"{settings.API_URL}/auth/google/callback"
-        token = await oauth.google.authorize_access_token(code=code, redirect_uri=redirect_uri)
+        redirect_uri = f"{settings.FRONTEND_URL}/auth/google/callback"
 
-        # Get user info from Google
-        user_info = token.get('userinfo')
-        if not user_info:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to get user info from Google"
-            )
+        token_url = "https://oauth2.googleapis.com/token"
+        token_data = {
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        }
+
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(token_url, data=token_data)
+            token_response.raise_for_status()
+            token_json = token_response.json()
+
+            access_token_google = token_json.get("access_token")
+            if not access_token_google:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to get access token from Google"
+                )
+
+            # Get user info from Google
+            userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+            headers = {"Authorization": f"Bearer {access_token_google}"}
+            userinfo_response = await client.get(userinfo_url, headers=headers)
+            userinfo_response.raise_for_status()
+            user_info = userinfo_response.json()
 
         email = user_info.get('email')
-        google_user_id = user_info.get('sub')
+        google_user_id = user_info.get('id')
         full_name = user_info.get('name')
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to get email from Google"
+            )
 
         # Check if user exists
         user = db.query(User).filter(User.email == email).first()
@@ -200,6 +244,11 @@ async def handle_google_callback(db: Session, code: str) -> tuple[User, str]:
 
         return user, access_token
 
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Google API error: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
