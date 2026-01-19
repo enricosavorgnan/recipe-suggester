@@ -15,7 +15,7 @@ The document is organized as follows:
   * [1. Introduction](#1-introduction)
     * [1.1 Purpose of the document](#11-purpose-of-the-document)
     * [1.2 Scope of the product](#12-scope-of-the-product)
-    * [1.3 Definitions, acronyms and abbreviations](#13-definitions-acronyms-and-abbreviations)
+    * [1.3 Definitions, acronyms, and abbreviations](#13-definitions-acronyms-and-abbreviations)
   * [2. General description](#2-general-description)
     * [2.1 Product workflow](#21-product-workflow)
     * [2.3 User characteristics](#23-user-characteristics)
@@ -38,8 +38,8 @@ The document is organized as follows:
       * [Data Requirements](#data-requirements)
       * [Maintainability & Model Lifecycle](#maintainability--model-lifecycle)
   * [4. Project Architecture](#4-project-architecture)
-    * [4.1 Training](#41-training)
-    * [4.2 Validation](#42-validation-)
+    * [4.1 High-level Architecture](#41-high-level-architecture)
+    * [4.2 Training & Validation](#42-training--validation)
     * [4.3 Deployment](#43-deployment)
     * [4.4 Monitoring](#44-monitoring)
   * [5. Risk Analysis](#5-risk-analysis)
@@ -49,13 +49,13 @@ The document is organized as follows:
 ---
 
 ### 1.2 Scope of the product
-The product "Recipe Suggester Tool" provides real-time, step-by-step and easy-to-cook recipes to the user, based on the food recognized in pictures sent by the user himself. This will allow the user to make less friction in deciding what to cook, reducing food waste and increasing user satisfaction and health through balanced diets. \
+The product "Recipe Suggester Tool" provides real-time, step-by-step, and easy-to-cook recipes to the user, based on the food recognized in pictures sent by the user himself. This will allow the user to make less friction in deciding what to cook, reducing food waste and increasing user satisfaction and health through balanced diets. \
 The product will be available as a web-app, accessible from any device with internet connection. \
 The product will be based on Machine Learning and Large Language Models to provide state-of-the-art solutions to the user, and it will be GDPR-compliant to ensure user data privacy.
 
 ---
 
-### 1.3 Definitions, acronyms and abbreviations
+### 1.3 Definitions, acronyms, and abbreviations
 - Platform, Webapp, Product, System are all used here 
 
 - RST: Recipe Suggester Tool, the name of the product
@@ -130,7 +130,7 @@ The following section will distinguish between Functional Requirements (code `F0
 - `F01.04`: During the registration process, the system should ask the user the following information: `Name, Surname, Age, Gender, Country, Allergies`, in order t provide better recipe suggestions.
 
 #### Image Upload & Pre-processing
-- `F02.01`: The system shall allow users to upload an image file via the web interface. The allowed formats are: `.JPG`, `.PNG`, `.WEBP`.
+- `F02.01`: The system shall allow users to upload an image file via the web interface. The allowed formats are: `.JPEG`, `.JPG`, `.PNG`, `.BMP`, `.WEBP`.
 - `F02.02`: The system shall validate the input size. A maximum of 5MB per image is allowed.
 - `F02.03`: The system shall display a loading icon or popup to make the user understand what is going on.
 
@@ -172,7 +172,7 @@ The following section will distinguish between Functional Requirements (code `F0
 
 #### Reliability & Availability
 - `N03.01`: The system shall be available 99% of the time once deployed.
-- `N03.02`: The system shall record and log into a log file all the errors occurring during the whole workflow, from user login errors to final recipe suggestions, for debugging, manual checking and improvement purposes.
+- `N03.02`: The system shall record and log into a log file all the errors occurring during the whole workflow, from user login errors to final recipe suggestions, for debugging, manual checking, and improvement purposes.
 - `N03.03`: The percentage of unhandled internal server errors (HTTP 500) shall be less than 1%.
 - `N03.04`: The system shall be able to recover from transient failures, such as temporary network issues or service unavailability, by implementing retry mechanisms (e.g., Docker Swarm/Compose).
 - `N03.05`: The system shall degrade by informing the user ("External service unavailable") in the event of an external service failure.
@@ -199,35 +199,132 @@ The following section will distinguish between Functional Requirements (code `F0
 - `N06.04`: The system shall allow a *many-to-many* relationship between users and their prefered recipes.
 
 #### Maintainability & Model Lifecycle
-- `N07.01`: The entire application (frontend, backend, database, cache) must be defined in a `docker-compose.yml` file, allowing the system to be sun up on any machine with a single command `docker compose up`.
+- `N07.01`: The entire application (frontend, backend, database) must be defined in a `docker-compose.yml` file, allowing the system to be sun up on any machine with a single command `docker compose up`.
 - `N07.02`: All the code should be versioned via `git` standard and `GitHub` platform.
 - `N07.03`: The commits should follow the structure presented in [Section 4.3](#43-deployment).
-- `N07.04`: The fine-tuned model weights shall be saved in a `.pt` format and versioned using Data Version Control protocol.
+- `N07.04`: The fine-tuned model weights shall be saved in a `.pt` format and (eventually) versioned using Data Version Control protocol.
 
 ---
 
 ---
 
 ## 4. Project Architecture
-### 4.1 Training
+This section is meant to describe the overall architecture of the project, from training to deployment and monitoring; a special focus will be given on the interactions between the components and the MAchine Learning lifecycle management.
+
+### 4.1 High-level Architecture
+The system follows a client-server architecture, where the client is the frontend webapp and the server is the backend API. \
+Three main components are identified:
+1. Client Tier (Frontend): A web application developed using React and TypeScript, responsible for user interaction, image upload, and displaying recipes. 
+2. Application Tier (Backend): A Python web server (FastAPI) acting as a central orchestrator, managing 
+   - User Authentication & Session Management
+   - Business Logic (Recipes Creation & Management)
+   - API Gateway functionality for ML components.
+3. Data Tier: Relational MySQL Database are used to store user data, metadata, and pointers to model versions.
 
 ---
 
-### 4.2 Validation 
+### 4.2 ML Training & Validation
+Regarding ML models, only a fine-tuned version of Ultralytics YOLO11n is implemented. \ 
+The LLM for the recipe creation is instead called via API, without any further process. 
+
+Data for the fine-tuning of YOLO models has been collected from a variety of datasets available online and shared through the most famous dataset platforms Roboflow. \
+It has been chosen because it provided ready-to-use models, natively exportable in a YOLO-like format. 
+
+- [Fridge Detector Dataset](https://universe.roboflow.com/fridgedetector/cook-ai/dataset/) - (21042 train, 2150 validation, 923 test)
+- [Fridgify Dataset](https://universe.roboflow.com/workspace01-ae0oa/fridgify/dataset/3) - (17691, 1427, 1104)
+- [Computer Vision Food Dataset](https://universe.roboflow.com/computer-vision-group-ji0bm/group_work/dataset/3) - (8754, 796, 574)
+- [Food Item Detection Dataset](https://universe.roboflow.com/coretus/food-item-detection-fggyf/dataset/1/images) (10558, 3003, 1486)
+
+The datasets have been merged and properly preprocessed in order to have a unique dataset with 99 different food classes. \
+
+Fine-tuning has been performed using CUDA-enabled machines on Univeristy of Trieste cluster "Demetra". \
+The model has been fine-tuned for 100 epochs. \
+Key metrics tracked include:
+- **Box-wise loss**: how well food boxes are identified in the space.
+- **Classification loss**: how well food types are classified.
+- **mAP@0.5**: mean Average Precision at IoU threshold of 0.5, measuring overall detection accuracy.
+- **mAP@0.5:0.95**: mean Average Precision averaged over multiple IoU thresholds from 0.5 to 0.95, providing a comprehensive accuracy measure.
+- **Accuracy, Precision, Recall**
+
+All the metrics and the model weights have been logged using pre-defined Ultralytics YOLOv8 functionalities. \
+The final model weights have been saved in a `.pt` and in a `.onnx` format and versioned using Git LFS.
+
+After fine-tuned, the model has been validated on a separate validation set (10% of the whole dataset) to ensure generalization capabilities, and finally tested on a test set (5% of the whole dataset) to evaluate final performance. \
+
+The final results are the following:
+- **mAP@0.5**: 
+- **mAP@0.5:0.95**: 
+- **Precision**:
+- **Recall**: 
+
+Before final deployment, the model had to pass a sequence of tests, implemented to ensure high-quality results:
+1. **Correct input**: check for test whether the model is able to deal with the following formats (`.JPEG`, `.PNG`, `.JPG`, `BMP`, `WEBP`)
+2. **Black Image**: test with a black image; expects no objects found, so a `None` as output.
+3. **Empty Fridge Image**: test with an empty fridge image; expects zero objects found, so a `None` as output.
+4. **Blurry Image**: test with a blurry image (adversarial attack-like); expects no objects found, so  `None` as output.
+5. **Accuracy Detection Test**: test with a common fridge image, for testing model accuracy on finding and correctly classifying items in the fridge. Expects the correct number and the correct classes found in the image as output.
+6. **Bounding Test**: test with a common fridge image, for testing whether the model is correctly able to define a suitable (as strict as possible) area around each food recognized. Expects the correct coordinates for the limits of the rectangle (upper-left corner and lower-right corner) as output.
 
 ---
 
 ### 4.3 Deployment
+Regarding ML component, deployment is pretty easy, since we are actually only saving a `.pt`. \
+
+Considering instead the whole web-app component, a Docker Image is the final output.
+Before the deployment of each component, also the webapp needs to pass a list of tests, for ensuring compatibility and full functionality:
+1. **Frontend Working Test**: simple checks for ensuring that the frontend is able to start without errors.
+2. **Frontend Type Check**: checks type errors in the TypeScript code.
+3. **Backend Working Test**: simple checks for ensuring that the backend is able to start without errors.
+4. **Docker Build Test**: tests whether each component is dockerizable, i.e., the `Dockerfile`s are correct and working.
+
+Once passed the tests, each component is dockerized using proper `Dockerfile`s; the webapp is then pushed to  GitHub Container Registry (GHCR) for versioning and easy deployment, so that one can easily pull the latest version directly in his local machine. \
 
 ---
 
 ### 4.4 Monitoring
+To ensure the system's reliability and performance post-deployment, a comprehensive monitoring strategy will be implemented. This includes:
+1. **Application Performance Monitoring (APM)**: Grafana will be used to monitor server performance, response times, and error rates.
+2. **Log Management**: Centralized logging using ELK Stack (Elasticsearch, Logstash, Kibana) to collect and analyze logs from both frontend and backend components.
+3. **User Analytics**: Integration with Google Analytics to track user interactions, session durations, and drop-off points within the web application.
+4. **Model Performance Monitoring**: Regular evaluation of the ML model's performance using a subset of user-uploaded images (with user consent) to detect any degradation in accuracy or response time. 
 
 ---
 
 ---
 
 ## 5. Risk Analysis
+
+This section identifies potential risks associated with the development and operation of the Recipe Suggester Tool. Risks are categorized by their nature (Technical, Machine Learning, or Privacy) and assessed based on their **Likelihood (L)** and **Impact (I)**.
+
+**Legend:**
+
+* **L (Likelihood):** 1 (Rare) to 5 (Almost Certain)
+* **I (Impact):** 1 (Negligible) to 5 (Catastrophic)
+* **Risk Level (R):** L × I (Low: 1-9, Medium: 10-19, High: 20-25)
+
+### 5.1 Technical & Infrastructure Risks
+
+| ID | Risk Description | L | I | R | Mitigation Strategy |
+| --- |----| --- | --- | --- | --- |
+| **R01** | **External API Unavailability** <br> The LLM provider (e.g., OpenAI) or the Auth provider (Google/Meta) goes offline or times out. | 3 | 5 | **15 (Med)** | Implement a **Circuit Breaker** pattern. If the LLM times out, fail gracefully with a user-friendly message ("Our chefs are busy"). Implement exponential backoff retries. |
+| **R02** | **Latency Constraint Violation** <br> The total response time exceeds the 15s threshold due to high traffic or LLM generation slowness. | 4 | 3 | **12 (Med)** | Use a faster, smaller LLM model (e.g., GPT-4o-mini) for standard requests. Implement **Redis Caching** for common ingredient combinations to skip generation entirely. |
+| **R03** | **Database Data Loss**<br> User profiles or saved recipes are lost due to storage corruption. | 1 | 5 | **5 (Low)** | Enable automated daily backups (snapshots) of the MySQL volume. Use a managed database service (e.g., AWS RDS) if deployed in production. |
+
+### 5.2 Machine Learning & MLOps Risks
+
+| ID | Risk Description | L | I | R | Mitigation Strategy |
+| --- |--- | --- | --- | --- | --- |
+| **R04** | **Model Hallucination (LLM)**<br> The LLM generates a recipe using ingredients *not* present in the user's fridge or creates unsafe cooking instructions. | 3 | 4 | **12 (Med)** | **Strict Prompt Engineering:** Use "System Prompts" that explicitly forbid adding outside ingredients. Set LLM `temperature` to 0.2 to reduce creativity/randomness. |
+| **R05** | **Data Drift (YOLO)**<br> Real-world user photos (dark, blurry, weird angles) differ significantly from the high-quality training datasets, causing accuracy to drop over time. | 4 | 4 | **16 (High)** | **Continuous Monitoring:** Log the confidence scores of detections. If the average confidence drops below 60%, trigger an alert for re-training. Collect user feedback (corrections) to build a "Fine-tuning Dataset". |
+| **R06** | **Bias & Sensitivity**<br> The model suggests meat recipes to a vegan user or fails to respect listed allergies. | 2 | 5 | **10 (Med)** | Inject user constraints (Allergies, Diet) directly into the **System Prompt** as strict rules (e.g., "CRITICAL: User is Vegan. Do not include meat."). |
+| **R07** | **Adversarial Attacks**<br> Users upload malicious images (noise patterns) designed to crash the inference server or consume excessive resources. | 2 | 3 | **6 (Low)** | Validate input image headers and resize/normalize all images to a standard resolution (e.g., 640x640) before passing them to the model. |
+
+### 5.3 Privacy & Compliance Risks (GDPR)
+
+| ID | Risk Description | L | I | R | Mitigation Strategy |
+| --- | --- | --- | --- | --- | --- |
+| **R08** | **Sensitive Data Leak (Images)**<br>Personal photos (e.g., selfies in the fridge reflection) are accidentally stored or leaked. | 2 | 5 | **10 (Med)** | **Stateless Architecture:** Images are processed in RAM and strictly deleted after the transaction. No permanent storage of raw images is allowed. |
+| **R09** | **API Key Exposure**<br>The system's or user's API keys are exposed in logs or GitHub commits. | 3 | 5 | **15 (Med)** | Use `.env` files and `git-crypt`. Configure the logger to mask sensitive fields (e.g., `sk-proj-***`) before writing to the log files. |
 
 ---
 
@@ -245,7 +342,9 @@ The following section will distinguish between Functional Requirements (code `F0
 [//]: # (F01.04:    Are the cells correct? Need to discuss. eventually, change N06 Section)
 [//]: # (F06.01:    Possibly some Metadata & Analytics can be expanded)
 
-[//]: # (Sect4:     Update)
+[//]: # (Sect4.2:   Add final result)
+
+[//]: # (Sect4:     Write. Ask the team do better decide what to do)
 [//]: # (Sect5:     Update)
 [//]: # (Sect6:     Update)
 
