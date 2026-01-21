@@ -26,6 +26,7 @@ class User(Base):
 
     # Relationship to auth details
     auth = relationship("UserAuth", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    recipes = relationship("Recipe", back_populates="user", cascade="all, delete-orphan")
 
 
 class UserAuth(Base):
