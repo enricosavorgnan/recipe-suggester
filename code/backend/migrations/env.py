@@ -9,9 +9,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.config.settings import settings
 from app.db.database import Base
-from app.models.user import User, UserAuth
-from app.models.recipe import Recipe
-from app.models.category import Category
+from app.models.user import User, UserAuth  # Import all models
 
 # Alembic Config object
 config = context.config

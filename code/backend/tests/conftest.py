@@ -79,12 +79,3 @@ def create_user(db_session, test_user_data):
     user, token = signup_with_email(db_session, request)
 
     return user, test_user_data["password"], token
-
-
-@pytest.fixture
-def auth_headers(create_user):
-    """
-    Create authentication headers with Bearer token
-    """
-    user, password, token = create_user
-    return {"Authorization": f"Bearer {token}"}
