@@ -32,3 +32,7 @@ class RecipeJobResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UpdateIngredientsRequest(BaseModel):
+    ingredients_json: str
