@@ -16,5 +16,3 @@ class Recipe(Base):
 
     user = relationship("User", back_populates="recipes")
     category = relationship("Category", back_populates="recipes")
-    ingredients_job = relationship("IngredientsJob", back_populates="recipe", uselist=False)
-    recipe_job = relationship("RecipeJob", back_populates="recipe", uselist=False)

@@ -12,7 +12,6 @@ from app.db.database import Base
 from app.models.user import User, UserAuth
 from app.models.recipe import Recipe
 from app.models.category import Category
-from app.models.job import IngredientsJob, RecipeJob
 
 # Alembic Config object
 config = context.config
