@@ -53,6 +53,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov ruff
 
+      - name: Run database migrations
+        run: alembic upgrade head
+
       - name: Lint with Ruff
         run: ruff check app/ --output-format=github
         continue-on-error: true
