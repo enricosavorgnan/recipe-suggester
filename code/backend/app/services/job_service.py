@@ -41,10 +41,11 @@ def get_ingredients_job(db: Session, job_id: int, user_id: int) -> IngredientsJo
     return job
 
 
-def update_ingredients_json(db: Session, recipe_id: int, user_id: int, ingredients_json: str) -> IngredientsJob:
+def update_ingredients_json(db: Session, recipe_id: int, user_id: int, ingredients_data: dict) -> IngredientsJob:
     """
     Updates the ingredients JSON for a completed ingredients job.
     Allows users to edit detected ingredients before generating recipe.
+    The ingredients_data is already validated by Pydantic schema.
     """
     # Get recipe and verify ownership
     recipe = db.query(Recipe).filter(Recipe.id == recipe_id, Recipe.user_id == user_id).first()
@@ -60,13 +61,8 @@ def update_ingredients_json(db: Session, recipe_id: int, user_id: int, ingredien
     if job.status != JobStatus.completed:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot update ingredients while job is still running")
 
-    # Validate JSON format (basic check)
-    try:
-        json.loads(ingredients_json)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON format")
-
-    job.ingredients_json = ingredients_json
+    # Convert validated data to JSON string for storage
+    job.ingredients_json = json.dumps(ingredients_data)
     db.commit()
     db.refresh(job)
 
@@ -85,13 +81,15 @@ async def process_ingredients_async(job_id: int):
         # Simulate ML processing time
         await asyncio.sleep(5)
 
-        # Mock ingredients detection result
+        # Mock ingredients detection result with confidence scores
         mock_ingredients = {
             "ingredients": [
-                {"name": "tomato", "quantity": "3", "unit": "pieces"},
-                {"name": "onion", "quantity": "1", "unit": "piece"},
-                {"name": "garlic", "quantity": "2", "unit": "cloves"}
-            ]
+                {"name": "Pasta", "confidence": 0.95},
+                {"name": "Tomato", "confidence": 0.88},
+                {"name": "Onion", "confidence": 0.72},
+                {"name": "Garlic", "confidence": 0.65}
+            ],
+            "success": True
         }
 
         job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()

@@ -47,8 +47,14 @@ def update_ingredients_json(
     """
     Updates the ingredients JSON for a recipe after user edits.
     Can only update completed ingredients jobs.
+    Validates ingredient structure with confidence scores.
     """
-    return job_service.update_ingredients_json(db, recipe_id, current_user.id, request.ingredients_json)
+    return job_service.update_ingredients_json(
+        db,
+        recipe_id,
+        current_user.id,
+        request.ingredients_data.model_dump()
+    )
 
 
 @router.post("/recipe/{recipe_id}", response_model=RecipeJobResponse, status_code=status.HTTP_201_CREATED)
