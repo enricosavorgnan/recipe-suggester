@@ -5,10 +5,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 export interface Recipe {
   id: number;
   title: string;
-  image_url: string | null;
+  image: string | null;
   user_id: number;
+  category_id: number | null;
   created_at: string;
-  updated_at: string;
 }
 
 export interface UpdateRecipeTitleRequest {
@@ -16,11 +16,13 @@ export interface UpdateRecipeTitleRequest {
 }
 
 const recipesApi = {
-  getRecipes: async (token: string): Promise<Recipe[]> => {
+  getRecipes: async (token: string, categoryId?: number | null): Promise<Recipe[]> => {
+    const params = categoryId !== undefined && categoryId !== null ? { category_id: categoryId } : {};
     const response = await axios.get(`${API_URL}/recipes`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      params,
     });
     return response.data;
   },

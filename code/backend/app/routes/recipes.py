@@ -20,10 +20,11 @@ def create_recipe(
 
 @router.get("", response_model=list[RecipeWithCategory])
 def get_recipes(
+    category_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return recipe_service.get_user_recipes(db, current_user.id)
+    return recipe_service.get_user_recipes(db, current_user.id, category_id)
 
 
 @router.get("/{recipe_id}", response_model=RecipeWithCategory)
