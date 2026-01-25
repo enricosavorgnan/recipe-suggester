@@ -45,8 +45,8 @@ def test_ingredients_job_completion(client: TestClient, auth_headers: dict):
     create_response = client.post(f"/jobs/ingredients/{recipe_id}", headers=auth_headers)
     job_id = create_response.json()["id"]
 
-    # Poll until job completes (with timeout)
-    max_attempts = 20
+    # Poll until job completes (with timeout) - background task takes 5 seconds
+    max_attempts = 30  # 15 seconds total
     for _ in range(max_attempts):
         time.sleep(0.5)
         response = client.get(f"/jobs/ingredients/{job_id}", headers=auth_headers)
@@ -64,28 +64,34 @@ def test_get_ingredients_job_not_found(client: TestClient, auth_headers: dict):
     assert response.status_code == 404
 
 
-def test_recipe_job_auto_created(client: TestClient, auth_headers: dict):
+def test_manual_recipe_job_creation(client: TestClient, auth_headers: dict):
     """
-    Test that recipe job is automatically created after ingredients job completes
+    Test that recipe job can be manually created after ingredients job completes
     """
     recipe_response = client.post("/recipes", headers=auth_headers)
     recipe_id = recipe_response.json()["id"]
 
+    # Create and complete ingredients job
     create_response = client.post(f"/jobs/ingredients/{recipe_id}", headers=auth_headers)
     ingredients_job_id = create_response.json()["id"]
 
     # Wait for ingredients job to complete
-    max_attempts = 20
+    max_attempts = 30
     for _ in range(max_attempts):
         time.sleep(0.5)
         response = client.get(f"/jobs/ingredients/{ingredients_job_id}", headers=auth_headers)
         if response.json()["status"] == "completed":
             break
 
-    # Check that recipe job was created - we need to query by recipe_id
-    # For now, we'll just verify the ingredients job completed
+    # Verify ingredients job completed
     response = client.get(f"/jobs/ingredients/{ingredients_job_id}", headers=auth_headers)
     assert response.json()["status"] == "completed"
+
+    # Now manually create recipe job
+    recipe_job_response = client.post(f"/jobs/recipe/{recipe_id}", headers=auth_headers)
+    assert recipe_job_response.status_code == 201
+    assert recipe_job_response.json()["recipe_id"] == recipe_id
+    assert recipe_job_response.json()["status"] == "running"
 
 
 def test_ingredients_job_isolation(client: TestClient, auth_headers: dict):
