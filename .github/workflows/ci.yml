@@ -26,7 +26,11 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_SERVER: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: testdb
 
     defaults:
       run:
