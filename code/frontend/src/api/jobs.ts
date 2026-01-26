@@ -20,6 +20,11 @@ export interface RecipeJob {
   end_time: string | null;
 }
 
+export interface RecipeJobs {
+  ingredients_job: IngredientsJob | null;
+  recipe_job: RecipeJob | null;
+}
+
 const jobsApi = {
   createIngredientsJob: async (recipeId: number, token: string): Promise<IngredientsJob> => {
     const response = await axios.post(`${API_URL}/jobs/ingredients/${recipeId}`, {}, {
@@ -50,6 +55,15 @@ const jobsApi = {
 
   getRecipeJob: async (jobId: number, token: string): Promise<RecipeJob> => {
     const response = await axios.get(`${API_URL}/jobs/recipe/${jobId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  },
+
+  getJobsByRecipe: async (recipeId: number, token: string): Promise<RecipeJobs> => {
+    const response = await axios.get(`${API_URL}/jobs/by-recipe/${recipeId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
