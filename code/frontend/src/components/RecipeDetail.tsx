@@ -1,9 +1,22 @@
-import { ChefHat, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChefHat, AlertCircle, Plus, Loader2, Check } from "lucide-react";
 import { Recipe } from "@/api/recipes";
 import { useQuery } from "@tanstack/react-query";
 import jobsApi from "@/api/jobs";
+import { Button } from "@/components/ui/button";
+import { IngredientItem } from "@/components/IngredientItem";
+import {
+  AddIngredientDialog,
+  EditIngredientDialog,
+  DeleteIngredientDialog,
+} from "@/components/IngredientDialogs";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+interface Ingredient {
+  name: string;
+  confidence?: number;
+}
 
 interface RecipeDetailProps {
   recipe: Recipe | null;
@@ -11,11 +24,79 @@ interface RecipeDetailProps {
 }
 
 export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ingredientName, setIngredientName] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
+  const [isGeneratingRecipe, setIsGeneratingRecipe] = useState(false);
+  const [recipeJobId, setRecipeJobId] = useState<number | null>(null);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  const recipeLoadingMessages = [
+    "Mixing up your ingredients...",
+    "Elaborating the recipe...",
+  ];
+
   const { data: jobs, isLoading } = useQuery({
     queryKey: ["recipe-jobs", recipe?.id],
     queryFn: () => jobsApi.getJobsByRecipe(recipe!.id, token),
     enabled: !!recipe && !!token,
   });
+
+  // Update ingredients when jobs data changes
+  useEffect(() => {
+    if (jobs?.ingredients_job?.ingredients_json) {
+      try {
+        const parsedData = JSON.parse(jobs.ingredients_job.ingredients_json);
+        if (parsedData.ingredients && Array.isArray(parsedData.ingredients)) {
+          setIngredients(parsedData.ingredients);
+        }
+      } catch (error) {
+        console.error("Failed to parse ingredients JSON:", error);
+      }
+    }
+  }, [jobs]);
+
+  // Rotating loading messages for recipe generation
+  useEffect(() => {
+    if (!isGeneratingRecipe) return;
+
+    const interval = setInterval(() => {
+      setLoadingMessageIndex((prev) => (prev + 1) % recipeLoadingMessages.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isGeneratingRecipe, recipeLoadingMessages.length]);
+
+  // Polling for recipe job status
+  useEffect(() => {
+    if (!recipeJobId || !isGeneratingRecipe) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const job = await jobsApi.getRecipeJob(recipeJobId, token);
+
+        if (job.status !== 'running') {
+          setIsGeneratingRecipe(false);
+          clearInterval(pollInterval);
+
+          if (job.status === 'completed') {
+            // Recipe generation completed - could show success message or navigate
+            console.log("Recipe generated successfully:", job.recipe_json);
+          } else if (job.status === 'failed') {
+            console.error("Recipe generation failed");
+          }
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+      }
+    }, 1000);
+
+    return () => clearInterval(pollInterval);
+  }, [recipeJobId, isGeneratingRecipe, token]);
 
   if (!recipe) {
     return (
@@ -35,6 +116,58 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
   const hasImage = !!recipe.image;
   const hasIngredients = ingredientsJob?.status === 'completed' && ingredientsJob.ingredients_json;
 
+  const handleAddIngredient = () => {
+    if (ingredientName.trim()) {
+      setIngredients([...ingredients, { name: ingredientName.trim() }]);
+      setIngredientName("");
+      setAddDialogOpen(false);
+    }
+  };
+
+  const handleEditIngredient = (index: number) => {
+    setEditingIndex(index);
+    setIngredientName(ingredients[index].name);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingIndex !== null && ingredientName.trim()) {
+      const updated = [...ingredients];
+      updated[editingIndex] = { ...updated[editingIndex], name: ingredientName.trim() };
+      setIngredients(updated);
+      setIngredientName("");
+      setEditingIndex(null);
+      setEditDialogOpen(false);
+    }
+  };
+
+  const handleDeleteIngredient = (index: number) => {
+    setDeletingIndex(index);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingIndex !== null) {
+      setIngredients(ingredients.filter((_, i) => i !== deletingIndex));
+      setDeletingIndex(null);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleConfirmIngredients = async () => {
+    if (!recipe) return;
+
+    try {
+      setIsGeneratingRecipe(true);
+      // Create recipe job
+      const job = await jobsApi.createRecipeJob(recipe.id, token);
+      setRecipeJobId(job.id);
+    } catch (error) {
+      console.error("Failed to create recipe job:", error);
+      setIsGeneratingRecipe(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       <h2 className="text-3xl font-bold text-foreground mb-6">
@@ -45,33 +178,113 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
         <div className="text-muted-foreground">Loading recipe details...</div>
       ) : (
         <div className="space-y-6">
-          {/* Recipe Image */}
-          {hasImage ? (
-            <div className="flex justify-center">
+          {/* Creation Date - Top Right */}
+          <div className="flex justify-end">
+            <div className="text-right">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                Created
+              </p>
+              <p className="text-sm text-foreground font-light">
+                {new Date(recipe.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground font-light">
+                {new Date(recipe.created_at).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </div>
+          </div>
+
+          {/* Image - Centered */}
+          <div className="flex justify-center">
+            {hasImage ? (
               <img
                 src={`${API_URL}/uploads/recipes/${recipe.image}`}
                 alt={recipe.title}
-                className="max-w-md rounded-lg shadow-lg"
+                className="w-64 h-64 object-cover rounded-lg shadow-lg"
               />
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-border">
-              <AlertCircle className="h-5 w-5 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                No image uploaded for this recipe
-              </p>
-            </div>
-          )}
+            ) : (
+              <div className="w-64 h-64 flex items-center justify-center bg-muted/50 rounded-lg border border-border">
+                <div className="text-center">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No image</p>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* Ingredients */}
+          {/* Ingredients Section */}
           <div>
-            <h3 className="text-xl font-semibold text-foreground mb-4">
-              Detected Ingredients
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-foreground">
+                Detected Ingredients
+              </h3>
+              {hasIngredients && (
+                <Button
+                  onClick={() => setAddDialogOpen(true)}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Ingredient
+                </Button>
+              )}
+            </div>
+
             {hasIngredients ? (
-              <pre className="bg-muted p-4 rounded-lg overflow-auto text-sm">
-                {JSON.stringify(JSON.parse(ingredientsJob.ingredients_json!), null, 2)}
-              </pre>
+              <>
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                  {ingredients.map((ingredient, index) => (
+                    <IngredientItem
+                      key={index}
+                      ingredient={ingredient}
+                      onEdit={() => handleEditIngredient(index)}
+                      onDelete={() => handleDeleteIngredient(index)}
+                    />
+                  ))}
+                </div>
+
+                {/* Confirm Button or Loading State */}
+                <div className="mt-6 flex justify-center">
+                  {isGeneratingRecipe ? (
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <p className="text-sm font-medium text-foreground">
+                        {recipeLoadingMessages[loadingMessageIndex]}
+                      </p>
+                    </div>
+                  ) : jobs?.recipe_job?.status === 'completed' ? (
+                    <div className="flex items-center gap-3 p-4 bg-green-100 rounded-lg border border-green-200">
+                      <Check className="h-5 w-5 text-green-600" />
+                      <p className="text-sm font-medium text-green-700">
+                        Recipe generated successfully!
+                      </p>
+                    </div>
+                  ) : jobs?.recipe_job?.status === 'failed' ? (
+                    <div className="flex items-center gap-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                      <AlertCircle className="h-5 w-5 text-destructive" />
+                      <p className="text-sm text-destructive">
+                        Failed to generate recipe. Please try again.
+                      </p>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleConfirmIngredients}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <Check className="h-5 w-5" />
+                      Confirm & Generate Recipe
+                    </Button>
+                  )}
+                </div>
+              </>
             ) : ingredientsJob?.status === 'running' ? (
               <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-border">
                 <AlertCircle className="h-5 w-5 text-muted-foreground" />
@@ -95,22 +308,44 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
               </div>
             )}
           </div>
-
-          {/* Recipe Metadata */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-semibold text-muted-foreground">Recipe ID</p>
-              <p className="text-lg text-foreground">{recipe.id}</p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-muted-foreground">Created At</p>
-              <p className="text-lg text-foreground">
-                {new Date(recipe.created_at).toLocaleString()}
-              </p>
-            </div>
-          </div>
         </div>
       )}
+
+      {/* Ingredient Dialogs */}
+      <AddIngredientDialog
+        open={addDialogOpen}
+        ingredientName={ingredientName}
+        onOpenChange={(open) => {
+          setAddDialogOpen(open);
+          if (!open) setIngredientName("");
+        }}
+        onNameChange={setIngredientName}
+        onSubmit={handleAddIngredient}
+      />
+
+      <EditIngredientDialog
+        open={editDialogOpen}
+        ingredientName={ingredientName}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
+            setIngredientName("");
+            setEditingIndex(null);
+          }
+        }}
+        onNameChange={setIngredientName}
+        onSubmit={handleSaveEdit}
+      />
+
+      <DeleteIngredientDialog
+        open={deleteDialogOpen}
+        ingredientName={deletingIndex !== null ? ingredients[deletingIndex]?.name : ""}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setDeletingIndex(null);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

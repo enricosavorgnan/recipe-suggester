@@ -56,9 +56,10 @@ async def process_ingredients_async(job_id: int):
         # Mock ingredients detection result
         mock_ingredients = {
             "ingredients": [
-                {"name": "tomato", "quantity": "3", "unit": "pieces"},
-                {"name": "onion", "quantity": "1", "unit": "piece"},
-                {"name": "garlic", "quantity": "2", "unit": "cloves"}
+                {"name": "Tomato", "confidence": 0.95},
+                {"name": "Onion", "confidence": 0.88},
+                {"name": "Garlic", "confidence": 0.72},
+                {"name": "Olive Oil", "confidence": 0.65}
             ]
         }
 
