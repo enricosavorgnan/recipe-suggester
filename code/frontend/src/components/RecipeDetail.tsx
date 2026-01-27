@@ -159,8 +159,8 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
 
     try {
       setIsGeneratingRecipe(true);
-      // Create recipe job
-      const job = await jobsApi.createRecipeJob(recipe.id, token);
+      // Create recipe job with current ingredients
+      const job = await jobsApi.createRecipeJob(recipe.id, ingredients, token);
       setRecipeJobId(job.id);
     } catch (error) {
       console.error("Failed to create recipe job:", error);

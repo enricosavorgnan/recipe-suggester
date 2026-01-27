@@ -32,3 +32,7 @@ class RecipeJobResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CreateRecipeJobRequest(BaseModel):
+    ingredients: list[dict]  # List of ingredients with name and optional confidence
