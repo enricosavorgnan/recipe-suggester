@@ -278,7 +278,7 @@ const Dashboard = () => {
               onRecipeCreated={handleRecipeCreated}
             />
           ) : (
-            <RecipeDetail recipe={selectedRecipe} />
+            <RecipeDetail recipe={selectedRecipe} token={token!} />
           )}
         </main>
       </div>
