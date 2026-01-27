@@ -9,6 +9,8 @@ def generate_recipe_from_ingredients(ingredients: list[str]) -> dict:
     """
     Generate a recipe using OpenAI GPT based on a list of ingredients.
 
+    CURRENTLY MOCKED TO SAVE COSTS - Remove mock and uncomment LLM call when ready.
+
     Args:
         ingredients: List of ingredient names (e.g., ["Tomato", "Pasta", "Garlic"])
 
@@ -16,10 +18,38 @@ def generate_recipe_from_ingredients(ingredients: list[str]) -> dict:
         dict: Recipe with structure containing difficulty, times, ingredients with quantities, and procedure
     """
 
+    # MOCK RESPONSE - Remove this and uncomment LLM call below when ready
+    import time
+    time.sleep(3)  # Simulate API call delay
+
+    return {
+        "difficulty": "Medium",
+        "preparation_time": 15,
+        "cooking_time": 30,
+        "ingredients": [
+            {"name": ing, "quantity_needed": 200 if "pasta" in ing.lower() else 100, "unit": "gr"}
+            for ing in ingredients
+        ] + [
+            {"name": "Olive Oil", "quantity_needed": 2, "unit": "tbsp"},
+            {"name": "Salt", "quantity_needed": 1, "unit": "tsp"},
+            {"name": "Black Pepper", "quantity_needed": 0.5, "unit": "tsp"}
+        ],
+        "procedure": [
+            "Prepare all ingredients by washing and chopping as needed",
+            "Heat olive oil in a large pan over medium heat",
+            "Add the main ingredients and sauté for 5-7 minutes",
+            "Season with salt and pepper to taste",
+            "Continue cooking until all ingredients are tender",
+            "Serve hot and enjoy your meal"
+        ]
+    }
+
+    # UNCOMMENT THIS SECTION TO USE REAL LLM (and remove mock above)
+    """
     # Create the prompt
     ingredients_str = ", ".join(ingredients)
 
-    prompt = f"""You are a professional chef assistant. Given the following ingredients, create a delicious and feasible recipe.
+    prompt = f'''You are a professional chef assistant. Given the following ingredients, create a delicious and feasible recipe.
 
 Ingredients available: {ingredients_str}
 
@@ -51,7 +81,7 @@ Important:
 - preparation_time is for prep work (cutting, mixing, etc.)
 - cooking_time is for actual cooking/baking time
 - Make the recipe practical and delicious
-- Return ONLY the JSON, no additional text"""
+- Return ONLY the JSON, no additional text'''
 
     try:
         response = client.chat.completions.create(
@@ -86,3 +116,4 @@ Important:
         print(f"Error generating recipe with LLM: {e}")
         # Return an error message
         raise e
+    """
