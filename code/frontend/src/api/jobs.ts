@@ -44,12 +44,15 @@ const jobsApi = {
     return response.data;
   },
 
-  createRecipeJob: async (recipeId: number, token: string): Promise<RecipeJob> => {
-    const response = await axios.post(`${API_URL}/jobs/recipe/${recipeId}`, {}, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  createRecipeJob: async (recipeId: number, ingredients: Array<{name: string, confidence?: number}>, token: string): Promise<RecipeJob> => {
+    const response = await axios.post(`${API_URL}/jobs/recipe/${recipeId}`,
+      { ingredients },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
     return response.data;
   },
 

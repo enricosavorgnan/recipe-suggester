@@ -5,6 +5,7 @@ import asyncio
 import json
 from app.models.job import IngredientsJob, RecipeJob, JobStatus
 from app.models.recipe import Recipe
+from app.services.llm_service import generate_recipe_from_ingredients
 
 
 def create_ingredients_job(db: Session, recipe_id: int, user_id: int, background_tasks: BackgroundTasks = None) -> IngredientsJob:
@@ -70,9 +71,6 @@ async def process_ingredients_async(job_id: int):
             job.end_time = datetime.utcnow()
             db.commit()
 
-            # Trigger recipe job creation
-            await trigger_recipe_job(db, job.recipe_id)
-
     except Exception as e:
         job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
         if job:
@@ -83,17 +81,37 @@ async def process_ingredients_async(job_id: int):
         db.close()
 
 
-async def trigger_recipe_job(db: Session, recipe_id: int):
+def create_recipe_job(db: Session, recipe_id: int, user_id: int, ingredients: list[dict], background_tasks: BackgroundTasks = None) -> RecipeJob:
     """
-    Creates recipe generation job after ingredients detection completes.
+    Creates a recipe generation job with the provided ingredients.
     """
+    recipe = db.query(Recipe).filter(Recipe.id == recipe_id, Recipe.user_id == user_id).first()
+    if not recipe:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+
+    # Check if ingredients job is completed
+    ingredients_job = db.query(IngredientsJob).filter(IngredientsJob.recipe_id == recipe_id).first()
+    if not ingredients_job or ingredients_job.status != JobStatus.completed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ingredients detection must be completed first"
+        )
+
+    # Check if recipe job already exists
+    existing_job = db.query(RecipeJob).filter(RecipeJob.recipe_id == recipe_id).first()
+    if existing_job:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Recipe job already exists for this recipe")
+
     job = RecipeJob(recipe_id=recipe_id, status=JobStatus.running)
     db.add(job)
     db.commit()
     db.refresh(job)
 
-    # Launch async task to generate recipe
-    await process_recipe_async(job.id)
+    # Launch async task to process recipe (if background_tasks provided)
+    if background_tasks:
+        background_tasks.add_task(process_recipe_async, job.id, ingredients)
+
+    return job
 
 
 def get_recipe_job(db: Session, job_id: int, user_id: int) -> RecipeJob:
@@ -108,40 +126,30 @@ def get_recipe_job(db: Session, job_id: int, user_id: int) -> RecipeJob:
     return job
 
 
-async def process_recipe_async(job_id: int):
+async def process_recipe_async(job_id: int, ingredients: list[dict]):
     """
-    Async task that simulates LLM processing for recipe generation.
+    Async task that uses LLM for recipe generation.
     Updates job status when done.
     """
     from app.db.database import SessionLocal
 
     db = SessionLocal()
     try:
-        # Simulate LLM processing time
-        await asyncio.sleep(8)
+        # Extract ingredient names from the list (ignore confidence)
+        ingredient_names = [ing.get("name", "") for ing in ingredients if ing.get("name")]
 
-        # Mock recipe generation result
-        mock_recipe = {
-            "title": "Tomato and Garlic Pasta",
-            "instructions": [
-                "Chop the onions and garlic",
-                "Dice the tomatoes",
-                "Sauté onions and garlic in olive oil",
-                "Add tomatoes and simmer for 20 minutes",
-                "Serve over pasta"
-            ],
-            "cooking_time": "30 minutes",
-            "servings": 4
-        }
+        # Generate recipe using LLM
+        recipe_dict = generate_recipe_from_ingredients(ingredient_names)
 
         job = db.query(RecipeJob).filter(RecipeJob.id == job_id).first()
         if job:
             job.status = JobStatus.completed
-            job.recipe_json = json.dumps(mock_recipe)
+            job.recipe_json = json.dumps(recipe_dict)
             job.end_time = datetime.utcnow()
             db.commit()
 
     except Exception as e:
+        print(f"Error in process_recipe_async: {e}")
         job = db.query(RecipeJob).filter(RecipeJob.id == job_id).first()
         if job:
             job.status = JobStatus.failed
