@@ -82,3 +82,15 @@ def get_recipe_job(
     Poll this endpoint to check when processing is complete.
     """
     return job_service.get_recipe_job(db, job_id, current_user.id)
+
+
+@router.get("/by-recipe/{recipe_id}")
+def get_jobs_by_recipe(
+    recipe_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Gets both ingredients and recipe jobs for a specific recipe.
+    """
+    return job_service.get_jobs_by_recipe(db, recipe_id, current_user.id)

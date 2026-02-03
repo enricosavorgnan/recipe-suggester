@@ -84,12 +84,11 @@ async def process_ingredients_async(job_id: int):
         # Mock ingredients detection result with confidence scores
         mock_ingredients = {
             "ingredients": [
-                {"name": "Pasta", "confidence": 0.95},
-                {"name": "Tomato", "confidence": 0.88},
-                {"name": "Onion", "confidence": 0.72},
-                {"name": "Garlic", "confidence": 0.65}
-            ],
-            "success": True
+                {"name": "Tomato", "confidence": 0.95},
+                {"name": "Onion", "confidence": 0.88},
+                {"name": "Garlic", "confidence": 0.72},
+                {"name": "Olive Oil", "confidence": 0.65}
+            ]
         }
 
         job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
@@ -196,3 +195,20 @@ async def process_recipe_async(job_id: int):
             db.commit()
     finally:
         db.close()
+
+
+def get_jobs_by_recipe(db: Session, recipe_id: int, user_id: int):
+    """
+    Gets both ingredients and recipe jobs for a specific recipe.
+    """
+    recipe = db.query(Recipe).filter(Recipe.id == recipe_id, Recipe.user_id == user_id).first()
+    if not recipe:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+
+    ingredients_job = db.query(IngredientsJob).filter(IngredientsJob.recipe_id == recipe_id).first()
+    recipe_job = db.query(RecipeJob).filter(RecipeJob.recipe_id == recipe_id).first()
+
+    return {
+        "ingredients_job": ingredients_job,
+        "recipe_job": recipe_job
+    }
