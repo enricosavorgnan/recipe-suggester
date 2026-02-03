@@ -1,3 +1,4 @@
+import os
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, BackgroundTasks
 from datetime import datetime
@@ -72,34 +73,38 @@ def update_ingredients_json(db: Session, recipe_id: int, user_id: int, ingredien
 
 async def process_ingredients_async(job_id: int):
     """
-    Async task that simulates ML model processing for ingredient detection.
-    Updates job status and launches recipe generation when done.
+    Async task that processes ML model for ingredient detection from image.
+    Updates job status when done.
     """
     from app.db.database import SessionLocal
+    from app.services.ml_service import detect_ingredients_from_image
 
     db = SessionLocal()
     try:
-        # Simulate ML processing time
+        # Get the job and recipe
+        job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
+        if not job:
+            return
+
+        recipe = db.query(Recipe).filter(Recipe.id == job.recipe_id).first()
+        if not recipe or not recipe.image:
+            raise ValueError("Recipe or image not found")
+
+        # Luca: this line must be deleted
         await asyncio.sleep(5)
 
-        # Mock ingredients detection result with confidence scores
-        mock_ingredients = {
-            "ingredients": [
-                {"name": "Tomato", "confidence": 0.95},
-                {"name": "Onion", "confidence": 0.88},
-                {"name": "Garlic", "confidence": 0.72},
-                {"name": "Olive Oil", "confidence": 0.65}
-            ]
-        }
+        # images are stored in uploads/recipes/
+        image_path = os.path.join("uploads", "recipes", recipe.image)
+        ingredients_data = detect_ingredients_from_image(image_path)
 
-        job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
-        if job:
-            job.status = JobStatus.completed
-            job.ingredients_json = json.dumps(mock_ingredients)
-            job.end_time = datetime.utcnow()
-            db.commit()
+        # Update job with results
+        job.status = JobStatus.completed
+        job.ingredients_json = json.dumps(ingredients_data)
+        job.end_time = datetime.utcnow()
+        db.commit()
 
     except Exception as e:
+        print(f"Error in process_ingredients_async: {e}")
         job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
         if job:
             job.status = JobStatus.failed
@@ -167,6 +172,9 @@ async def process_recipe_async(job_id: int, ingredients: list[dict]):
         # Extract ingredient names from the list (ignore confidence)
         ingredient_names = [ing.get("name", "") for ing in ingredients if ing.get("name")]
 
+        if not ingredient_names:
+            raise ValueError("No ingredients provided")
+
         # Generate recipe using LLM
         recipe_dict = generate_recipe_from_ingredients(ingredient_names)
 
@@ -178,7 +186,15 @@ async def process_recipe_async(job_id: int, ingredients: list[dict]):
             db.commit()
 
     except Exception as e:
-        print(f"Error in process_recipe_async: {e}")
+        error_msg = str(e)
+        print(f"Error in process_recipe_async: {error_msg}")
+
+        # Check for specific OpenAI errors
+        if "rate_limit" in error_msg.lower() or "quota" in error_msg.lower():
+            print("OpenAI API rate limit or quota exceeded")
+        elif "api_key" in error_msg.lower() or "authentication" in error_msg.lower():
+            print("OpenAI API authentication error - check API key")
+
         job = db.query(RecipeJob).filter(RecipeJob.id == job_id).first()
         if job:
             job.status = JobStatus.failed

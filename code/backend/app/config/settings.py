@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     API_URL: str = "http://localhost:8000"
 
     # Authentication settings
-    SECRET_KEY: str = "your-secret-key-change-in-production-min-32-chars"
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
@@ -39,6 +39,7 @@ class Settings(BaseSettings):
 
     # OpenAI settings
     OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
 
     @property
     def DATABASE_URL(self) -> str:

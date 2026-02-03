@@ -11,6 +11,7 @@ class JobStatus(str, enum.Enum):
     failed = "failed"
 
 
+# represents sync job done by the ML service
 class IngredientsJob(Base):
     __tablename__ = "ingredients_jobs"
 
@@ -24,6 +25,7 @@ class IngredientsJob(Base):
     recipe = relationship("Recipe", back_populates="ingredients_job")
 
 
+# represents job called for LLM recipe generation
 class RecipeJob(Base):
     __tablename__ = "recipe_jobs"
 
