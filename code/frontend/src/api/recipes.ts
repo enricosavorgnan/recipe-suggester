@@ -32,7 +32,7 @@ const recipesApi = {
     data: UpdateRecipeTitleRequest,
     token: string
   ): Promise<Recipe> => {
-    const response = await axios.put(`${API_URL}/recipes/${recipeId}`, data, {
+    const response = await axios.patch(`${API_URL}/recipes/${recipeId}`, data, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -46,6 +46,28 @@ const recipesApi = {
         Authorization: `Bearer ${token}`,
       },
     });
+  },
+
+  createRecipe: async (token: string): Promise<Recipe> => {
+    const response = await axios.post(`${API_URL}/recipes`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  },
+
+  uploadImage: async (recipeId: number, file: File, token: string): Promise<Recipe> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await axios.post(`${API_URL}/recipes/${recipeId}/upload`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
   },
 };
 
