@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-from app.schemas.job import IngredientsJobResponse, RecipeJobResponse, CreateRecipeJobRequest
+from app.schemas.job import IngredientsJobResponse, RecipeJobResponse, UpdateIngredientsRequest
 from app.services import job_service
 
 
@@ -37,19 +37,38 @@ def get_ingredients_job(
     return job_service.get_ingredients_job(db, job_id, current_user.id)
 
 
+@router.put("/ingredients/{recipe_id}", response_model=IngredientsJobResponse)
+def update_ingredients_json(
+    recipe_id: int,
+    request: UpdateIngredientsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Updates the ingredients JSON for a recipe after user edits.
+    Can only update completed ingredients jobs.
+    Validates ingredient structure with confidence scores.
+    """
+    return job_service.update_ingredients_json(
+        db,
+        recipe_id,
+        current_user.id,
+        request.ingredients_data.model_dump()
+    )
+
+
 @router.post("/recipe/{recipe_id}", response_model=RecipeJobResponse, status_code=status.HTTP_201_CREATED)
 def create_recipe_job(
     recipe_id: int,
-    request: CreateRecipeJobRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Creates a recipe generation job for a recipe with the provided ingredients.
-    Returns immediately while LLM processing runs in background.
+    Manually triggers recipe generation job after user edits ingredients.
+    Requires ingredients detection to be completed first.
     """
-    return job_service.create_recipe_job(db, recipe_id, current_user.id, request.ingredients, background_tasks)
+    return job_service.create_recipe_job(db, recipe_id, current_user.id, background_tasks)
 
 
 @router.get("/recipe/{job_id}", response_model=RecipeJobResponse)

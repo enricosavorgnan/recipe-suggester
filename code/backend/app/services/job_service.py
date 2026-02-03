@@ -42,6 +42,34 @@ def get_ingredients_job(db: Session, job_id: int, user_id: int) -> IngredientsJo
     return job
 
 
+def update_ingredients_json(db: Session, recipe_id: int, user_id: int, ingredients_data: dict) -> IngredientsJob:
+    """
+    Updates the ingredients JSON for a completed ingredients job.
+    Allows users to edit detected ingredients before generating recipe.
+    The ingredients_data is already validated by Pydantic schema.
+    """
+    # Get recipe and verify ownership
+    recipe = db.query(Recipe).filter(Recipe.id == recipe_id, Recipe.user_id == user_id).first()
+    if not recipe:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+
+    # Get ingredients job
+    job = db.query(IngredientsJob).filter(IngredientsJob.recipe_id == recipe_id).first()
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ingredients job not found")
+
+    # Only allow updates if job is completed
+    if job.status != JobStatus.completed:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot update ingredients while job is still running")
+
+    # Convert validated data to JSON string for storage
+    job.ingredients_json = json.dumps(ingredients_data)
+    db.commit()
+    db.refresh(job)
+
+    return job
+
+
 async def process_ingredients_async(job_id: int):
     """
     Async task that simulates ML model processing for ingredient detection.
@@ -54,7 +82,7 @@ async def process_ingredients_async(job_id: int):
         # Simulate ML processing time
         await asyncio.sleep(5)
 
-        # Mock ingredients detection result
+        # Mock ingredients detection result with confidence scores
         mock_ingredients = {
             "ingredients": [
                 {"name": "Tomato", "confidence": 0.95},
@@ -81,21 +109,22 @@ async def process_ingredients_async(job_id: int):
         db.close()
 
 
-def create_recipe_job(db: Session, recipe_id: int, user_id: int, ingredients: list[dict], background_tasks: BackgroundTasks = None) -> RecipeJob:
+def create_recipe_job(db: Session, recipe_id: int, user_id: int, background_tasks: BackgroundTasks = None) -> RecipeJob:
     """
-    Creates a recipe generation job with the provided ingredients.
+    Manually creates a recipe generation job for a recipe.
+    Requires that ingredients job is completed first.
     """
     recipe = db.query(Recipe).filter(Recipe.id == recipe_id, Recipe.user_id == user_id).first()
     if not recipe:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
 
-    # Check if ingredients job is completed
+    # Check that ingredients job exists and is completed
     ingredients_job = db.query(IngredientsJob).filter(IngredientsJob.recipe_id == recipe_id).first()
-    if not ingredients_job or ingredients_job.status != JobStatus.completed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ingredients detection must be completed first"
-        )
+    if not ingredients_job:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ingredients job not found. Run ingredient detection first.")
+
+    if ingredients_job.status != JobStatus.completed:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ingredients job must be completed before generating recipe")
 
     # Check if recipe job already exists
     existing_job = db.query(RecipeJob).filter(RecipeJob.recipe_id == recipe_id).first()
@@ -107,9 +136,9 @@ def create_recipe_job(db: Session, recipe_id: int, user_id: int, ingredients: li
     db.commit()
     db.refresh(job)
 
-    # Launch async task to process recipe (if background_tasks provided)
+    # Launch async task to generate recipe (if background_tasks provided)
     if background_tasks:
-        background_tasks.add_task(process_recipe_async, job.id, ingredients)
+        background_tasks.add_task(process_recipe_async, job.id)
 
     return job
 
