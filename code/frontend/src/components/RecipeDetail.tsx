@@ -10,6 +10,7 @@ import {
   EditIngredientDialog,
   DeleteIngredientDialog,
 } from "@/components/IngredientDialogs";
+import { RecipeDisplay } from "@/components/RecipeDisplay";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -159,8 +160,8 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
 
     try {
       setIsGeneratingRecipe(true);
-      // Create recipe job
-      const job = await jobsApi.createRecipeJob(recipe.id, token);
+      // Create recipe job with current ingredients
+      const job = await jobsApi.createRecipeJob(recipe.id, ingredients, token);
       setRecipeJobId(job.id);
     } catch (error) {
       console.error("Failed to create recipe job:", error);
@@ -169,15 +170,15 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col pb-8">
       <h2 className="text-3xl font-bold text-foreground mb-6">
         {recipe.title}
       </h2>
 
       {isLoading ? (
-        <div className="text-muted-foreground">Loading recipe details...</div>
+        <div className="text-muted-foreground mb-8">Loading recipe details...</div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-8">
           {/* Creation Date - Top Right */}
           <div className="flex justify-end">
             <div className="text-right">
@@ -251,39 +252,40 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
                 </div>
 
                 {/* Confirm Button or Loading State */}
-                <div className="mt-6 flex justify-center">
-                  {isGeneratingRecipe ? (
-                    <div className="flex items-center gap-3">
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      <p className="text-sm font-medium text-foreground">
-                        {recipeLoadingMessages[loadingMessageIndex]}
-                      </p>
-                    </div>
-                  ) : jobs?.recipe_job?.status === 'completed' ? (
-                    <div className="flex items-center gap-3 p-4 bg-green-100 rounded-lg border border-green-200">
-                      <Check className="h-5 w-5 text-green-600" />
-                      <p className="text-sm font-medium text-green-700">
-                        Recipe generated successfully!
-                      </p>
-                    </div>
-                  ) : jobs?.recipe_job?.status === 'failed' ? (
-                    <div className="flex items-center gap-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-                      <AlertCircle className="h-5 w-5 text-destructive" />
-                      <p className="text-sm text-destructive">
-                        Failed to generate recipe. Please try again.
-                      </p>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={handleConfirmIngredients}
-                      size="lg"
-                      className="gap-2"
-                    >
-                      <Check className="h-5 w-5" />
-                      Confirm & Generate Recipe
-                    </Button>
-                  )}
-                </div>
+                {!jobs?.recipe_job || jobs.recipe_job.status === 'failed' || jobs.recipe_job.status === 'running' ? (
+                  <div className="mt-6">
+                    {isGeneratingRecipe ? (
+                      <div className="flex flex-col items-center gap-6">
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <p className="text-lg font-medium text-foreground">
+                            {recipeLoadingMessages[loadingMessageIndex]}
+                          </p>
+                        </div>
+                      </div>
+                    ) : jobs?.recipe_job?.status === 'failed' ? (
+                      <div className="flex justify-center">
+                        <div className="flex items-center gap-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                          <AlertCircle className="h-5 w-5 text-destructive" />
+                          <p className="text-sm text-destructive">
+                            Failed to generate recipe. Please try again.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-center">
+                        <Button
+                          onClick={handleConfirmIngredients}
+                          size="lg"
+                          className="gap-2"
+                        >
+                          <Check className="h-5 w-5" />
+                          Confirm & Generate Recipe
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </>
             ) : ingredientsJob?.status === 'running' ? (
               <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-border">
@@ -308,6 +310,18 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
               </div>
             )}
           </div>
+
+          {/* Generated Recipe Display */}
+          {jobs?.recipe_job?.status === 'completed' && jobs.recipe_job.recipe_json && (
+            <div className="mt-8">
+              <div className="border-t border-border pt-8">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
+                  Your Generated Recipe
+                </h2>
+                <RecipeDisplay recipeJson={jobs.recipe_job.recipe_json} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -77,10 +77,11 @@ const Dashboard = () => {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => recipesApi.deleteRecipe(id, token!),
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       toast.success("Recipe deleted successfully");
-      if (selectedRecipe && selectedRecipe.id === deleteMutation.variables) {
+      // If the deleted recipe was selected, clear the selection
+      if (selectedRecipe && selectedRecipe.id === deletedId) {
         setSelectedRecipe(null);
       }
       setDeleteRecipeDialogOpen(false);
@@ -236,8 +237,22 @@ const Dashboard = () => {
     });
   };
 
-  const handleJobComplete = () => {
-    queryClient.invalidateQueries({ queryKey: ["recipes", filterCategoryId] });
+  const handleJobComplete = async (job: IngredientsJob) => {
+    // Invalidate recipes query to refetch
+    await queryClient.invalidateQueries({ queryKey: ["recipes", filterCategoryId] });
+
+    // Switch to recipe detail view
+    // Fetch the updated recipe data
+    try {
+      const updatedRecipes = await recipesApi.getRecipes(token!, filterCategoryId);
+      const newRecipe = updatedRecipes?.find(r => r.id === job.recipe_id);
+      if (newRecipe) {
+        setSelectedRecipe(newRecipe);
+        setShowUploadView(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch recipe after job completion:", error);
+    }
   };
 
   const handleRecipeCreated = () => {

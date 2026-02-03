@@ -92,7 +92,12 @@ export const DeleteRecipeDialog = ({
   onConfirm,
 }: DeleteRecipeDialogProps) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      // Prevent closing while deleting
+      if (!isPending) {
+        onOpenChange(newOpen);
+      }
+    }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Recipe</DialogTitle>
@@ -104,6 +109,7 @@ export const DeleteRecipeDialog = ({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isPending}
           >
             Cancel
           </Button>

@@ -148,7 +148,7 @@ export const ImageUpload = ({ token, onJobComplete, onRecipeCreated }: ImageUplo
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col pb-8">
       <h2 className="text-3xl font-bold text-foreground mb-6">
         Create new recipe
       </h2>

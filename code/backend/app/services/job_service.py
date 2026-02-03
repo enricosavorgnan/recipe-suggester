@@ -5,6 +5,7 @@ import asyncio
 import json
 from app.models.job import IngredientsJob, RecipeJob, JobStatus
 from app.models.recipe import Recipe
+from app.services.llm_service import generate_recipe_from_ingredients
 
 
 def create_ingredients_job(db: Session, recipe_id: int, user_id: int, background_tasks: BackgroundTasks = None) -> IngredientsJob:
@@ -154,40 +155,30 @@ def get_recipe_job(db: Session, job_id: int, user_id: int) -> RecipeJob:
     return job
 
 
-async def process_recipe_async(job_id: int):
+async def process_recipe_async(job_id: int, ingredients: list[dict]):
     """
-    Async task that simulates LLM processing for recipe generation.
+    Async task that uses LLM for recipe generation.
     Updates job status when done.
     """
     from app.db.database import SessionLocal
 
     db = SessionLocal()
     try:
-        # Simulate LLM processing time
-        await asyncio.sleep(8)
+        # Extract ingredient names from the list (ignore confidence)
+        ingredient_names = [ing.get("name", "") for ing in ingredients if ing.get("name")]
 
-        # Mock recipe generation result
-        mock_recipe = {
-            "title": "Tomato and Garlic Pasta",
-            "instructions": [
-                "Chop the onions and garlic",
-                "Dice the tomatoes",
-                "Sauté onions and garlic in olive oil",
-                "Add tomatoes and simmer for 20 minutes",
-                "Serve over pasta"
-            ],
-            "cooking_time": "30 minutes",
-            "servings": 4
-        }
+        # Generate recipe using LLM
+        recipe_dict = generate_recipe_from_ingredients(ingredient_names)
 
         job = db.query(RecipeJob).filter(RecipeJob.id == job_id).first()
         if job:
             job.status = JobStatus.completed
-            job.recipe_json = json.dumps(mock_recipe)
+            job.recipe_json = json.dumps(recipe_dict)
             job.end_time = datetime.utcnow()
             db.commit()
 
     except Exception as e:
+        print(f"Error in process_recipe_async: {e}")
         job = db.query(RecipeJob).filter(RecipeJob.id == job_id).first()
         if job:
             job.status = JobStatus.failed
