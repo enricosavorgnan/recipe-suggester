@@ -22,8 +22,13 @@ def create_recipe(db: Session, user_id: int) -> Recipe:
     return recipe
 
 
-def get_user_recipes(db: Session, user_id: int) -> list[Recipe]:
-    return db.query(Recipe).filter(Recipe.user_id == user_id).order_by(Recipe.created_at.desc()).all()
+def get_user_recipes(db: Session, user_id: int, category_id: int | None = None) -> list[Recipe]:
+    query = db.query(Recipe).filter(Recipe.user_id == user_id)
+
+    if category_id is not None:
+        query = query.filter(Recipe.category_id == category_id)
+
+    return query.order_by(Recipe.created_at.desc()).all()
 
 
 def get_recipe(db: Session, recipe_id: int, user_id: int) -> Recipe:
