@@ -10,9 +10,10 @@ interface IngredientItemProps {
   ingredient: Ingredient;
   onEdit: () => void;
   onDelete: () => void;
+  hideActions?: boolean;
 }
 
-export const IngredientItem = ({ ingredient, onEdit, onDelete }: IngredientItemProps) => {
+export const IngredientItem = ({ ingredient, onEdit, onDelete, hideActions = false }: IngredientItemProps) => {
   const getConfidenceColor = (confidence?: number): string => {
     if (!confidence) return "text-muted-foreground";
     if (confidence >= 0.75) return "text-green-600";
@@ -41,24 +42,26 @@ export const IngredientItem = ({ ingredient, onEdit, onDelete }: IngredientItemP
           </span>
         )}
       </div>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 p-0"
-          onClick={onEdit}
-        >
-          <Edit className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={onDelete}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+      {!hideActions && (
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={onEdit}
+          >
+            <Edit className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,8 +3,10 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-from app.schemas.job import IngredientsJobResponse, RecipeJobResponse, UpdateIngredientsRequest
+from app.schemas.job import IngredientsJobResponse, RecipeJobResponse, UpdateIngredientsRequest, Ingredient
 from app.services import job_service
+from pydantic import BaseModel
+from typing import List
 
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -57,9 +59,15 @@ def update_ingredients_json(
     )
 
 
+class CreateRecipeJobRequest(BaseModel):
+    """Request to create recipe generation job with ingredients"""
+    ingredients: List[Ingredient]
+
+
 @router.post("/recipe/{recipe_id}", response_model=RecipeJobResponse, status_code=status.HTTP_201_CREATED)
 def create_recipe_job(
     recipe_id: int,
+    request: CreateRecipeJobRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -68,7 +76,9 @@ def create_recipe_job(
     Manually triggers recipe generation job after user edits ingredients.
     Requires ingredients detection to be completed first.
     """
-    return job_service.create_recipe_job(db, recipe_id, current_user.id, background_tasks)
+    # Convert Pydantic models to dicts for the service layer
+    ingredients_dicts = [ing.model_dump() for ing in request.ingredients]
+    return job_service.create_recipe_job(db, recipe_id, current_user.id, ingredients_dicts, background_tasks)
 
 
 @router.get("/recipe/{job_id}", response_model=RecipeJobResponse)

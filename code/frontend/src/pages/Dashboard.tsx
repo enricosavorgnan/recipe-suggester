@@ -63,9 +63,13 @@ const Dashboard = () => {
   const renameMutation = useMutation({
     mutationFn: ({ id, title }: { id: number; title: string }) =>
       recipesApi.updateRecipeTitle(id, { title }, token!),
-    onSuccess: () => {
+    onSuccess: (updatedRecipe) => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       toast.success("Recipe renamed successfully");
+      // Update the selected recipe if it's the one being renamed
+      if (selectedRecipe && selectedRecipe.id === updatedRecipe.id) {
+        setSelectedRecipe(updatedRecipe);
+      }
       setRenameDialogOpen(false);
       setRecipeToRename(null);
       setNewTitle("");

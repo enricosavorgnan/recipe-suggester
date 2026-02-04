@@ -109,7 +109,7 @@ async def process_ingredients_async(job_id: int):
         db.close()
 
 
-def create_recipe_job(db: Session, recipe_id: int, user_id: int, background_tasks: BackgroundTasks = None) -> RecipeJob:
+def create_recipe_job(db: Session, recipe_id: int, user_id: int, ingredients: list[dict], background_tasks: BackgroundTasks = None) -> RecipeJob:
     """
     Manually creates a recipe generation job for a recipe.
     Requires that ingredients job is completed first.
@@ -138,7 +138,7 @@ def create_recipe_job(db: Session, recipe_id: int, user_id: int, background_task
 
     # Launch async task to generate recipe (if background_tasks provided)
     if background_tasks:
-        background_tasks.add_task(process_recipe_async, job.id)
+        background_tasks.add_task(process_recipe_async, job.id, ingredients)
 
     return job
 

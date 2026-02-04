@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChefHat, AlertCircle, Plus, Loader2, Check } from "lucide-react";
 import { Recipe } from "@/api/recipes";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import jobsApi from "@/api/jobs";
 import { Button } from "@/components/ui/button";
 import { IngredientItem } from "@/components/IngredientItem";
@@ -11,6 +11,7 @@ import {
   DeleteIngredientDialog,
 } from "@/components/IngredientDialogs";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
+import { toast } from "sonner";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -61,6 +62,14 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
     }
   }, [jobs]);
 
+  // Initialize recipe job state if there's a running job
+  useEffect(() => {
+    if (jobs?.recipe_job?.status === 'running') {
+      setRecipeJobId(jobs.recipe_job.id);
+      setIsGeneratingRecipe(true);
+    }
+  }, [jobs?.recipe_job]);
+
   // Rotating loading messages for recipe generation
   useEffect(() => {
     if (!isGeneratingRecipe) return;
@@ -72,32 +81,44 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
     return () => clearInterval(interval);
   }, [isGeneratingRecipe, recipeLoadingMessages.length]);
 
+  const queryClient = useQueryClient();
+
   // Polling for recipe job status
   useEffect(() => {
     if (!recipeJobId || !isGeneratingRecipe) return;
 
-    const pollInterval = setInterval(async () => {
+    let pollInterval: NodeJS.Timeout;
+
+    const poll = async () => {
       try {
         const job = await jobsApi.getRecipeJob(recipeJobId, token);
 
         if (job.status !== 'running') {
           setIsGeneratingRecipe(false);
-          clearInterval(pollInterval);
+          if (pollInterval) clearInterval(pollInterval);
 
           if (job.status === 'completed') {
-            // Recipe generation completed - could show success message or navigate
-            console.log("Recipe generated successfully:", job.recipe_json);
+            // Invalidate query to refetch jobs data and show the recipe
+            await queryClient.invalidateQueries({ queryKey: ["recipe-jobs", recipe?.id] });
+            toast.success("Recipe generated successfully!");
           } else if (job.status === 'failed') {
-            console.error("Recipe generation failed");
+            toast.error("Failed to generate recipe");
           }
         }
       } catch (error) {
         console.error("Polling error:", error);
+        if (pollInterval) clearInterval(pollInterval);
+        setIsGeneratingRecipe(false);
+        toast.error("Error checking recipe status");
       }
-    }, 1000);
+    };
 
-    return () => clearInterval(pollInterval);
-  }, [recipeJobId, isGeneratingRecipe, token]);
+    pollInterval = setInterval(poll, 1000);
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [recipeJobId, isGeneratingRecipe, token, queryClient, recipe?.id]);
 
   if (!recipe) {
     return (
@@ -225,7 +246,7 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
               <h3 className="text-xl font-semibold text-foreground">
                 Detected Ingredients
               </h3>
-              {hasIngredients && (
+              {hasIngredients && !jobs?.recipe_job?.recipe_json && (
                 <Button
                   onClick={() => setAddDialogOpen(true)}
                   size="sm"
@@ -247,6 +268,7 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
                       ingredient={ingredient}
                       onEdit={() => handleEditIngredient(index)}
                       onDelete={() => handleDeleteIngredient(index)}
+                      hideActions={!!jobs?.recipe_job?.recipe_json}
                     />
                   ))}
                 </div>
