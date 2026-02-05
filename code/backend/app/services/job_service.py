@@ -180,6 +180,16 @@ async def process_recipe_async(job_id: int, ingredients: list[dict]):
 
         job = db.query(RecipeJob).filter(RecipeJob.id == job_id).first()
         if job:
+            # Update the Recipe table with the generated title
+            recipe = db.query(Recipe).filter(Recipe.id == job.recipe_id).first()
+            if recipe and "title" in recipe_dict:
+                old_title = recipe.title
+                recipe.title = recipe_dict["title"]
+                print(f"[Recipe Title Update] Recipe ID {recipe.id}: '{old_title}' -> '{recipe.title}'")
+            else:
+                print(f"[Recipe Title Update] SKIPPED - recipe: {recipe}, has title: {'title' in recipe_dict}")
+
+            # Update the job with recipe JSON
             job.status = JobStatus.completed
             job.recipe_json = json.dumps(recipe_dict)
             job.end_time = datetime.utcnow()

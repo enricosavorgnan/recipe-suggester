@@ -7,6 +7,7 @@ interface RecipeIngredient {
 }
 
 interface GeneratedRecipe {
+  title: string;
   difficulty: string;
   preparation_time: number;
   cooking_time: number;
@@ -46,6 +47,11 @@ export const RecipeDisplay = ({ recipeJson }: RecipeDisplayProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Recipe Title */}
+      <div className="mb-6">
+        <h2 className="text-3xl font-bold text-foreground">{recipe.title}</h2>
+      </div>
+
       {/* Recipe Header - Times and Difficulty */}
       <div className="grid grid-cols-3 gap-4">
         <div className="flex items-center gap-3 p-4 bg-card rounded-lg border border-border shadow-sm">

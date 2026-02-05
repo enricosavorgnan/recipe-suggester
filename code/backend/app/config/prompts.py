@@ -23,6 +23,7 @@ Create a recipe using these ingredients. You can suggest additional common pantr
 
 Return ONLY a valid JSON object with this exact structure:
 {{
+  "title": "Creative and appetizing recipe name",
   "difficulty": "Easy|Medium|Hard",
   "preparation_time": <minutes as integer>,
   "cooking_time": <minutes as integer>,
@@ -41,6 +42,7 @@ Return ONLY a valid JSON object with this exact structure:
 }}
 
 Important:
+- Create an appealing and descriptive title for the recipe
 - Include ALL ingredients from the list above in your recipe
 - Include realistic quantities and appropriate units
 - Provide clear, numbered step-by-step instructions

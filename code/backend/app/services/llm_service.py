@@ -41,7 +41,7 @@ def generate_recipe_from_ingredients(ingredients: list[str]) -> dict:
         recipe_dict = json.loads(recipe_json)
 
         # Validate the response has the required fields
-        required_fields = ["difficulty", "preparation_time", "cooking_time", "ingredients", "procedure"]
+        required_fields = ["title", "difficulty", "preparation_time", "cooking_time", "ingredients", "procedure"]
         for field in required_fields:
             if field not in recipe_dict:
                 raise ValueError(f"Missing required field: {field}")
