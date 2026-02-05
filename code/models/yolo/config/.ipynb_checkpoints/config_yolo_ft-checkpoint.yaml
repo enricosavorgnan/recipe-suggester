@@ -1,0 +1,17 @@
+# Paths to files
+# ------------------
+config_data_path: "../../../../data/Yolodataset/Mergedatasets/data.yaml"
+
+# Fine-tuning Settings
+# ------------------
+epochs: 100
+early_stop_patience: 15
+image_size: 640
+batch_size: 32
+augmentation: True
+device: 0
+
+# Output Settings
+# ------------------
+version_name: "yolo11_ft_v1"
+version_format: ".onnx"

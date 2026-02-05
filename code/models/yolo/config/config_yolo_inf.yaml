@@ -1,0 +1,9 @@
+# Paths to files
+# ------------------
+model_path: "../model_weights/yolo_best.onnx"
+
+# Inference Settings
+# ------------------
+image_size: 640
+conf_threshold: 0.25
+save: False
