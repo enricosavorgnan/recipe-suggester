@@ -79,11 +79,13 @@ async def process_ingredients_async(job_id: int):
     import sys
     from pathlib import Path
     from app.db.database import SessionLocal
-    from detector import detect_ingredients
-    
-    # Add models folder to Python path
-    models_path = Path(_file_).resolve().parent.parent.parent.parent / "models" / "yolo"
-    sys.path.insert(0, str(models_path))
+
+    code_dir = Path(__file__).resolve().parents[3]
+    models_yolo_path = code_dir / "models" / "yolo"
+    if str(models_yolo_path) not in sys.path:
+        sys.path.insert(0, str(models_yolo_path))
+
+    from detector import detect_ingredients  # type: ignore
 
     
     db = SessionLocal()
@@ -104,11 +106,17 @@ async def process_ingredients_async(job_id: int):
         image_path = os.path.join("uploads", "recipes", recipe.image)
         ingredients_data = detect_ingredients(image_path)
 
+        print(f"[DEBUG] Detected ingredients: {ingredients_data}")
+        print(f"[DEBUG] Type: {type(ingredients_data)}")
+        ingredients_json_str = json.dumps(ingredients_data)
+        print(f"[DEBUG] JSON string: {ingredients_json_str}")
+
         # Update job with results
         job.status = JobStatus.completed
-        job.ingredients_json = json.dumps(ingredients_data)
+        job.ingredients_json = ingredients_json_str
         job.end_time = datetime.utcnow()
         db.commit()
+        print(f"[DEBUG] Job {job.id} updated with ingredients")
 
     except Exception as e:
         print(f"Error in process_ingredients_async: {e}")
