@@ -143,11 +143,47 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  model-validation:
+    name: Model Code Validation (Lightweight)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./code/models
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Python syntax
+        run: |
+          python -m py_compile yolo/detector.py
+          python -m py_compile yolo/yolo_model.py
+          echo "✓ Python syntax valid"
+
+      - name: Check model imports
+        run: |
+          cd yolo
+          python -c "import yolo_model; print('✓ yolo_model imports successfully')"
+        continue-on-error: true
+
+      - name: Verify required files exist
+        run: |
+          test -f yolo/detector.py && echo "✓ detector.py exists"
+          test -f yolo/yolo_model.py && echo "✓ yolo_model.py exists"
+          test -f yolo/config/config_yolo_inf.yaml && echo "✓ config exists"
+          test -f requirements.txt && echo "✓ requirements.txt exists"
+
   # Status check job, require only this in branch protection
   ci-passed:
     name: All CI Checks Passed
     runs-on: ubuntu-latest
-    needs: [backend-test, frontend-build, docker-build-test]
+    needs: [backend-test, frontend-build, docker-build-test, model-validation]
     steps:
       - name: All checks passed
         run: echo "All CI checks passed successfully"

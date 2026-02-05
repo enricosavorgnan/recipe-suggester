@@ -11,10 +11,18 @@ __pycache__/
 
 # Virtual environments
 venv/
+env/
 
-# Model weights and results
+# Model weights and results (not tracked in git)
 results/
 runs/
+*.pt
+*.onnx
+model_weights/*.pt
+model_weights/*.onnx
+
+# Test images (too large for CI)
+test_images/
 
 # IDE
 .vscode/
