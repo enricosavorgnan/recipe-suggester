@@ -137,7 +137,8 @@ jobs:
       - name: Build ${{ matrix.component }} image
         uses: docker/build-push-action@v5
         with:
-          context: ./code/${{ matrix.component }}
+          context: ${{ matrix.component == 'backend' && './code' || './code/frontend' }}
+          file: ./code/${{ matrix.component }}/Dockerfile
           push: false
           tags: recipe-suggester-${{ matrix.component }}:test
           cache-from: type=gha
