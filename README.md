@@ -1,16 +1,21 @@
-# recipe-suggester
+# Recipe Suggester
 A Recipe Suggester Tool developed as the final project for the course of 440MI - Machine Learning Operations @ University of Trieste.
+
+Students:
+- Baratto Luca
+- Moro Tommaso
+- Savorgnan Enrico
 
 ## Quick Start
 
 ### Local Development
-See individual component READMEs:
+See individual component READMEs for detailed explanations:
 - [Backend](./code/backend/README.md)
 - [Frontend](./code/frontend/README.md)
 
 ### Deployment (Docker)
 ```bash
-# 1. Set your GitHub username
+# 1. Set GitHub username
 echo "GITHUB_REPO_OWNER=your-username" > .env
 
 # 2. Pull latest images from registry

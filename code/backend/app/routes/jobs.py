@@ -89,7 +89,7 @@ def get_recipe_job(
 ):
     """
     Gets status of recipe generation job.
-    Poll this endpoint to check when processing is complete.
+    We poll this endpoint to check when processing is complete.
     """
     return job_service.get_recipe_job(db, job_id, current_user.id)
 

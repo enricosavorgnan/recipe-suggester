@@ -187,6 +187,7 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
     } catch (error) {
       console.error("Failed to create recipe job:", error);
       setIsGeneratingRecipe(false);
+      toast.error("Failed to start recipe generation. Please try again.");
     }
   };
 

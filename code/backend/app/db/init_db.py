@@ -11,12 +11,12 @@ def init_db():
     print("Running database migrations...")
     try:
         subprocess.run(["alembic", "upgrade", "head"], check=True)
-        print("✓ Database migrations applied successfully!")
+        print("Database migrations applied successfully!")
     except subprocess.CalledProcessError as e:
-        print(f"✗ Migration failed: {e}")
+        print(f"Migration failed: {e}")
         sys.exit(1)
     except FileNotFoundError:
-        print("✗ Alembic not found. Install with: pip install alembic")
+        print("Alembic not found. Install with: pip install alembic")
         sys.exit(1)
 
 

@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
 
-
+# this model is used simply to assign recipes to different categories (e.g. breakfast)
 class Category(Base):
     __tablename__ = "categories"
 

@@ -4,6 +4,7 @@ from datetime import datetime
 from app.db.database import Base
 
 
+# main model of the database, recipe belongs to a user
 class Recipe(Base):
     __tablename__ = "recipes"
 

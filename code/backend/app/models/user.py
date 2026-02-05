@@ -48,9 +48,7 @@ class UserAuth(Base):
     # For OAuth: provider user ID (null for email users)
     provider_user_id = Column(String, nullable=True, index=True)
 
-    # Tracking
     last_login = Column(DateTime, nullable=True)
     is_active = Column(Integer, default=1, nullable=False)  # 1 = active, 0 = disabled
 
-    # Relationship to user
     user = relationship("User", back_populates="auth")
