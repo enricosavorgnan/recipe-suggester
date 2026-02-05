@@ -20,7 +20,7 @@ class YOLOClass:
         """
         
         try:
-            self.model = YOLO(yolo_model)
+            self.model = YOLO(yolo_model, task="detect")
         except Exception as e:
             print(f"An exception occurred while trying to instantiate the class:\n\n{e}")
 
@@ -70,7 +70,6 @@ class YOLOClass:
         # Validate the fine-tuning
         ft_metrics = self.model.val()
         print(f"mAP50-95: {ft_metrics.box.map}")
-
         return train_results, ft_metrics
 
 
@@ -97,17 +96,19 @@ class YOLOClass:
         Returns:
         - val_metrics : object, metrics obtained from the testing
         """
+
+        # Check if a model is already loaded, otherwise load the model from the given path
         if self.model is None:
             assert model_path is not None, "No model loaded. Please provide a model path."
             self.load_module(model_path)
             self.project_folder = project_folder
 
+        # Define the folder where validation results will be stored
         val_folder = self.project_folder + 'validation/' if self.project_folder is not None else None
 
+        # Run validation on the specified dataset split and print the mean Average Precision (mAP)
         val_metrics = self.model.val(split=split, project=val_folder)
-
         print(f"{split} mAP50-95: {val_metrics.box.map}")
-
         return val_metrics
 
 
@@ -123,39 +124,30 @@ class YOLOClass:
         Returns:
         - predictions : object, predictions made by the model
         """
+
+        # Load the inference configuration from the provided YAML file
         try:
             with open(config_path, 'r') as f:
-                config = yaml.save_load(f)
+                config = yaml.safe_load(f)
         except FileNotFoundError as e:
             print(f"File {config_path} not found\nError:\n\n{e}")
             return
-            
+
+        # Check if a model is already loaded, otherwise load the model specified in the config
         if self.model is None:
             assert config['model_path'] is not None, "No model loaded. Please provide a model path."
             self.load_module(config['model_path'])
             self.project_folder = project_folder
 
+        # Define the folder where prediction results will be stored
         predict_folder = self.project_folder + 'prediction/' if self.project_folder is not None else None
 
+        # Run prediction on the given image using parameters from the config
         predictions = self.model.predict(
             source=image_path,
-            imgsz=conifg['img_size'],
+            imgsz=config['image_size'],
             conf=config['conf_threshold'],
             save=config['save'],
             project = predict_folder
         )
-        
         return predictions
-
-
-if __name__ == '__main__':
-    yolo_finetuner = YOLOClass("../../../yolo11n.pt")
-
-    config_ft_path = "./config_yolo_finetune.yaml"
-    results_ft, metrics = yolo_finetuner.fine_tune(config_ft_path)
-    print(f"Final mAP50-95 after fine-tuning: {metrics.box.map}")
-
-    config_inf_path = './config_yolo_inference.yaml'
-    image_path = '../tests/frigo.png'
-    results_inf = yolo_finetuner.predict(config_inf_path, image_path)
-    print(results_inf)
