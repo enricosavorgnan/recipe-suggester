@@ -1,4 +1,8 @@
 [core]
-    remote = myremote
+    remote = azure-dvc
 ['remote "myremote"']
     url = gdrive://2tsczA2xwHXToroTMyDXJpUTDV8GSvVp
+    gdrive_client_id = 1002754381952-0hc609m11uu8uais4v2fqbscplh7j2p2.apps.googleusercontent.com
+    gdrive_client_secret = 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
+['remote "azure-dvc"']
+    url = azure://dvcrecipesuggester
