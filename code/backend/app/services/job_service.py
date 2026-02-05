@@ -76,9 +76,16 @@ async def process_ingredients_async(job_id: int):
     Async task that processes ML model for ingredient detection from image.
     Updates job status when done.
     """
+    import sys
+    from pathlib import Path
     from app.db.database import SessionLocal
-    from app.services.ml_service import detect_ingredients_from_image
+    from detector import detect_ingredients
+    
+    # Add models folder to Python path
+    models_path = Path(_file_).resolve().parent.parent.parent.parent / "models" / "yolo"
+    sys.path.insert(0, str(models_path))
 
+    
     db = SessionLocal()
     try:
         # Get the job and recipe
@@ -95,7 +102,7 @@ async def process_ingredients_async(job_id: int):
 
         # images are stored in uploads/recipes/
         image_path = os.path.join("uploads", "recipes", recipe.image)
-        ingredients_data = detect_ingredients_from_image(image_path)
+        ingredients_data = detect_ingredients(image_path)
 
         # Update job with results
         job.status = JobStatus.completed

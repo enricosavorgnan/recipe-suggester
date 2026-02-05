@@ -1,0 +1,9 @@
+# ML/Computer Vision for YOLO ingredient detection
+ultralytics==8.3.54
+opencv-python==4.10.0.84
+numpy==1.26.4
+pyyaml==6.0.2
+
+# ONNX Runtime for model inference
+onnx>=1.15.0
+onnxruntime>=1.17.0
