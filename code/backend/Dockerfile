@@ -16,11 +16,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install backend requirements
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy and install models requirements
-COPY ../models/requirements.txt ./models-requirements.txt
+COPY models/requirements.txt ./models-requirements.txt
 RUN pip install --no-cache-dir --user -r models-requirements.txt
 
 # Final stage
@@ -44,10 +44,10 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /root/.local /root/.local
 
 # Copy application code
-COPY . .
+COPY backend /app
 
 # Copy models folder (for ML inference)
-COPY ../models /app/models
+COPY models /app/models
 
 # Make sure scripts are in PATH
 ENV PATH=/root/.local/bin:$PATH

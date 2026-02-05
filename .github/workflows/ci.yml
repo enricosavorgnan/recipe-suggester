@@ -174,10 +174,11 @@ jobs:
 
       - name: Verify required files exist
         run: |
-          test -f yolo/detector.py && echo "✓ detector.py exists"
-          test -f yolo/yolo_model.py && echo "✓ yolo_model.py exists"
-          test -f yolo/config/config_yolo_inf.yaml && echo "✓ config exists"
-          test -f requirements.txt && echo "✓ requirements.txt exists"
+          test -f yolo/detector.py && echo "detector.py exists" || exit 1
+          test -f yolo/yolo_model.py && echo "yolo_model.py exists" || exit 1
+          test -f yolo/config/config_yolo_inf.yaml && echo "config exists" || exit 1
+          test -f requirements.txt && echo "requirements.txt exists" || exit 1
+          echo "All required files present"
 
   # Status check job, require only this in branch protection
   ci-passed:
