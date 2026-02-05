@@ -53,7 +53,10 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
     if (jobs?.ingredients_job?.ingredients_json) {
       try {
         const parsedData = JSON.parse(jobs.ingredients_job.ingredients_json);
-        if (parsedData.ingredients && Array.isArray(parsedData.ingredients)) {
+        // Handle both array format and object with ingredients key
+        if (Array.isArray(parsedData)) {
+          setIngredients(parsedData);
+        } else if (parsedData.ingredients && Array.isArray(parsedData.ingredients)) {
           setIngredients(parsedData.ingredients);
         }
       } catch (error) {
