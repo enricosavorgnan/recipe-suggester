@@ -1,0 +1,23 @@
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+
+# Model weights and results
+results/
+runs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -100,6 +100,8 @@ export const RecipeDetail = ({ recipe, token }: RecipeDetailProps) => {
           if (job.status === 'completed') {
             // Invalidate query to refetch jobs data and show the recipe
             await queryClient.invalidateQueries({ queryKey: ["recipe-jobs", recipe?.id] });
+            // Also invalidate recipes list to update sidebar with new title
+            await queryClient.invalidateQueries({ queryKey: ["recipes"] });
             toast.success("Recipe generated successfully!");
           } else if (job.status === 'failed') {
             toast.error("Failed to generate recipe");
