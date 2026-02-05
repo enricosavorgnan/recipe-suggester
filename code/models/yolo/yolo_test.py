@@ -3,7 +3,7 @@ import unittest
 import cv2
 import numpy as np
 import os
-from ultralytics import YOLO
+from finetuner import YOLOClass
 
 
 def is_valid_format(filename):
@@ -26,7 +26,11 @@ class TestVisionPipeline(unittest.TestCase):
 
         # Load the detection model
         print("--- Model loading ---")
+        cls.model = YOLOClass("./model_weights/yolo_best.onnx")
         cls.test_img_dir = "test_images"
+        cls.config_path = "./config/config_yolo_inf.yaml"
+        cls.project_folder = "./results/"
+        
 
     
     def test_image_format_validation(self):
@@ -52,11 +56,10 @@ class TestVisionPipeline(unittest.TestCase):
 
         # Create the black image and call the detection model prediction procedure
         black_img = np.zeros((640, 640, 3), dtype=np.uint8)
-        model = YOLO("model_weights/yolo_best.onnx")
-        result = model.predict(
-            source=black_img,
-            imgsz=640,
-            conf=0.1,
+        result = self.model.predict(
+            config_path=self.config_path,
+            image_path=black_img,
+            project_folder=self.project_folder
         )
         self.assertEqual(len(result[0].boxes), 0, "Empty image should not return anything.")
 
@@ -69,13 +72,13 @@ class TestVisionPipeline(unittest.TestCase):
         # Load the image and call the detection model prediction procedure
         img_path = os.path.join(self.test_img_dir, "empty_fridge.png")
         img = cv2.imread(img_path)
-        if img is None: 
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if img_rgb is None: 
             self.skipTest("empty_fridge.jpg not found")
-        model = YOLO("model_weights/yolo_best.onnx")
-        result = model.predict(
-            source=img,
-            imgsz=640,
-            conf=0.1,
+        result = self.model.predict(
+            config_path=self.config_path,
+            image_path=img_path,
+            project_folder=self.project_folder
         )
         self.assertEqual(len(result[0].boxes), 0, "Empty-fridge image should not return anything.")
 
@@ -88,18 +91,18 @@ class TestVisionPipeline(unittest.TestCase):
         # Load a good image and blur it 
         img_path = os.path.join(self.test_img_dir, "frigo.png")
         img = cv2.imread(img_path)
-        if img is None: 
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if img_rgb is None: 
             self.skipTest("good_fridge.jpg not found")
 
         # Apply the blur (moving hand) 
-        blurry_img = cv2.GaussianBlur(img, (51, 51), 0)
+        blurry_img = cv2.GaussianBlur(img_rgb, (51, 51), 0)
 
         # Call the detection model prediction procedure
-        model = YOLO("model_weights/yolo_best.onnx")
-        result = model.predict(
-            source=blurry_img,
-            imgsz=640,
-            conf=0.1,
+        result = self.model.predict(
+            config_path=self.config_path,
+            image_path=blurry_img,
+            project_folder=self.project_folder
         )
         self.assertEqual(len(result[0].boxes), 0, "Pre-processing had to discard the blurred image.")
 
@@ -112,14 +115,14 @@ class TestVisionPipeline(unittest.TestCase):
         # Load the image and define the expected output
         img_path = os.path.join(self.test_img_dir, "fridge_3_items.png") 
         img = cv2.imread(img_path)
-        expected_labels = sorted(['Garlic', 'Lemon', 'Onion'])
-        print('cias')
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        expected_labels = sorted(['Banana', 'Beef', 'Tomato'])
+
         # Call the detection model prediction procedure
-        model = YOLO("model_weights/yolo_best.onnx")
-        result = model.predict(
-            source=img,
-            imgsz=640,
-            conf=0.2,
+        result = self.model.predict(
+            config_path=self.config_path,
+            image_path=img_path,
+            project_folder=self.project_folder
         )
         results = result[0]
         class_ids = results.boxes.cls.cpu().numpy()
@@ -143,19 +146,17 @@ class TestVisionPipeline(unittest.TestCase):
         """
     
         # Load the image
-        img_path = os.path.join(self.test_img_dir, "fridge_4_items.png")
+        img_path = os.path.join(self.test_img_dir, "fridge_3_items.png")
         img = cv2.imread(img_path)
-        height, width, _ = img.shape
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        height, width, _ = img_rgb.shape
         total_area = height * width
-    
-        # Load the YOLO model
-        model = YOLO("model_weights/yolo_best.onnx")
-    
-        # Make prediction
-        results = model.predict(
-            source=img,
-            imgsz=640,
-            conf=0.1,
+        
+        # Call the detection model prediction procedure
+        results = self.model.predict(
+            config_path=self.config_path,
+            image_path=img_path,
+            project_folder=self.project_folder
         )
     
         r = results[0]
