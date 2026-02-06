@@ -1,6 +1,19 @@
 """
 Pytest configuration and fixtures
 """
+import sys
+from unittest.mock import MagicMock
+
+# Mock ML modules to prevent import errors in CI
+mock_detector = MagicMock()
+mock_detector.detect_ingredients = MagicMock(return_value=[
+    {"name": "tomato", "confidence": 0.95},
+    {"name": "onion", "confidence": 0.87}
+])
+sys.modules['detector'] = mock_detector
+sys.modules['yolo_model'] = MagicMock()
+sys.modules['ultralytics'] = MagicMock()
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
