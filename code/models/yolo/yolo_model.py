@@ -42,7 +42,7 @@ class YOLOClass:
         # Load configuration path
         try:
             with open(config_path, 'r') as f:
-                config = yaml.save_load(f)
+                config = yaml.safe_load(f)
         except FileNotFoundError as e:
             print(f"File {config_path} not found\nError:\n\n{e}")
             return
