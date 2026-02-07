@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, BackgroundTasks
 from datetime import datetime
@@ -92,7 +93,9 @@ async def process_ingredients_async(job_id: int):
             raise ValueError("Recipe or image not found")
 
         # images are stored in uploads/recipes/
-        image_path = os.path.join("uploads", "recipes", recipe.image)
+        # Use absolute path so models service can find it when running locally
+        from app.services.recipe_service import UPLOAD_DIR
+        image_path = str((UPLOAD_DIR / recipe.image).resolve())
 
         # Call models service via HTTP
         models_service_url = f"{settings.MODELS_SERVICE_URL}/predict"
