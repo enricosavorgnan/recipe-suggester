@@ -1,6 +1,6 @@
 # Recipe Suggester Backend
 
-FastAPI backend for the Recipe Suggester application. Provides REST API endpoints for recipe management, ingredient detection (relying on ML service), and recipe generation using OpenAI's GPT.
+FastAPI backend for the Recipe Suggester application. Provides REST API endpoints for recipe management, user authentication, and job orchestration. Integrates with the **Models Service** for ingredient detection and **OpenAI** for recipe generation.
 
 ## Table of Contents
 
