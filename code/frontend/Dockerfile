@@ -13,32 +13,21 @@ RUN npm ci --only=production=false
 # Copy application code
 COPY . .
 
+# Capture the API URL from host build arguments
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build the application
 RUN npm run build
 
 # Production stage
 FROM nginx:alpine
 
-# Copy custom nginx config for SPA routing
-COPY <<EOF /etc/nginx/conf.d/default.conf
-server {
-    listen 80;
-    root /usr/share/nginx/html;
-    index index.html;
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
 
-    # SPA fallback - redirect all requests to index.html
-    location / {
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    # Health check endpoint
-    location /health {
-        access_log off;
-        return 200 "healthy\n";
-        add_header Content-Type text/plain;
-    }
-}
-EOF
+# Copy our custom Nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
