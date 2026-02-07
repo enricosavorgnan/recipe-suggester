@@ -280,8 +280,10 @@ Published images:
 See [CI/CD docs](./docs/cicd.md) for details.
 
 ## Datasets
-- Vegetables Dataset: [https://images.cv/dataset/vegetables-image-classification-dataset]
-- Fruits Dataset: [https://www.kaggle.com/datasets/moltean/fruits]
-- Fish Dataset: [https://www.kaggle.com/datasets/markdaniellampa/fish-dataset]
-- Meat Dataset: [https://universe.roboflow.com/sages/meat-a9qkz/dataset/1/images?split=train]
-- Fridgy Dataset: [https://universe.roboflow.com/workspace01-ae0oa/fridgify/dataset/4] [https://universe.roboflow.com/project/cook-ai/dataset/2]
+
+The dataset used to fine-tune the detection model (YOLOv11 nano) is made up of 4 different datasets provided by Roboflow.
+
+- [Roboflow – group_work dataset](https://universe.roboflow.com/computer-vision-group-ji0bm/group_work/dataset/3)
+- [Roboflow – Food Item Detection](https://universe.roboflow.com/coretus/food-item-detection-fggyf/dataset/1)
+- [Roboflow – Fridgify](https://universe.roboflow.com/workspace01-ae0oa/fridgify/dataset/3)
+- [Roboflow – Cook AI](https://universe.roboflow.com/fridgedetector/cook-ai/dataset/2)

@@ -40,9 +40,21 @@ This project uses GitHub Actions for continuous integration and deployment.
    - Upload build artifacts
 
 3. **Docker Build Test**
-   - Test backend Docker build
-   - Test frontend Docker build
-   - Use build cache for speed
+   - **Backend**
+     - Test backend Docker build
+     - Use Docker layer cache for speed
+   - **Frontend**
+     - Test frontend Docker build
+     - Use Docker layer cache for speed     
+   - **Models** (Conditional)
+     - Only runs if `code/models/**` files changed                                               
+     - Test models Docker build                                                                  
+     - Use Docker layer cache for speed
+
+4. **Models Service Validation** (conditional)                                                 
+   - Only runs if `code/models/**` files changed                                               
+   - Validate Python syntax for core files                                                     
+   - Verify required files exist (app.py, Dockerfile, detector.py, yolo_model.py)
 
 ### CD Workflow (`.github/workflows/cd.yml`)
 
