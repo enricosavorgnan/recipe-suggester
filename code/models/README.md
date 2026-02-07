@@ -14,7 +14,6 @@ The choice of separating this from the backend was in order to have independent 
 - [How It Works](#how-it-works)
 - [API Interface](#api-interface)
 - [Testing](#testing)
-- [Model Details](#model-details)
 - [Contributing](#contributing)
 
 ## Project Structure
@@ -121,10 +120,10 @@ FRONTEND                    BACKEND                     MODELS SERVICE
    ```
 
 4. **Access the API**
-   - **Service info**: http://localhost:8001/
-   - **Health check**: http://localhost:8001/health
-   - **API docs**: http://localhost:8001/docs
-   - **Prediction endpoint**: POST http://localhost:8001/predict
+   - **Service info**: `http://localhost:8001/`
+   - **Health check**: `http://localhost:8001/health`
+   - **API docs**: `http://localhost:8001/docs`
+   - **Prediction endpoint**: POST `http://localhost:8001/predict`
 
 ### Docker Deployment
 
@@ -225,21 +224,6 @@ Detect ingredients from an image.
 
 ### Usage Examples
 
-**Python (using requests):**
-```python
-import requests
-
-response = requests.post(
-    "http://localhost:8001/predict",
-    json={"image_path": "uploads/recipes/fridge_photo.jpg"}
-)
-
-data = response.json()
-print(f"Found {data['count']} ingredients:")
-for ingredient in data['ingredients']:
-    print(f"  - {ingredient['name']}: {ingredient['confidence']:.2f}")
-```
-
 **cURL:**
 ```bash
 curl -X POST "http://localhost:8001/predict" \
@@ -273,43 +257,6 @@ The test suite (`yolo_test.py`) covers:
 
 Test images are located in:
 - `yolo/test_images/` - Unit test images
-
-## Model Details
-
-### Model Architecture
-
-- **Base Model**: YOLOv11 nano (lightweight, fast inference)
-- **Task**: Object detection for food ingredients
-- **Training**: Fine-tuned on custom food ingredient dataset
-
-### Model Weights
-
-| File | Size | Format | Purpose |
-|------|------|--------|---------|
-| `yolo_best.onnx` | ~10.8 MB | ONNX | **Primary inference model** |
-| `yolo_best.pt` | ~5.6 MB | PyTorch | Backup / retraining |
-| `yolo_last.pt` | ~5.6 MB | PyTorch | Last training checkpoint |
-| `yolo11n_base.pt` | ~5.6 MB | PyTorch | Base model for fine-tuning |
-
-### Performance Characteristics
-
-| Metric | Value |
-|--------|-------|
-| Model load time | ~2-3 seconds (first request only) |
-| Inference time (GPU) | ~100-200ms per image |
-| Inference time (CPU) | ~300-500ms per image |
-| Memory usage | ~500MB (model + runtime) |
-| Input size | 640x640 pixels |
-| Confidence threshold | 0.25 (25%) |
-
-### Detected Ingredient Classes
-
-The model can detect common food ingredients including:
-- Vegetables: Tomato, Lettuce, Bell Pepper, Beetroot, Carrot, etc.
-- Fruits: Banana, Apple, Orange, etc.
-- Proteins: Beef, Chicken, Eggs, etc.
-- Dairy: Cheese, Milk, etc.
-- And more...
 
 ## Contributing
 
