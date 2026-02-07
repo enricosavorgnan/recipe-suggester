@@ -37,8 +37,15 @@ RUN apt-get update && apt-get install -y \
 # Copy Python dependencies from builder
 COPY --from=builder /root/.local /root/.local
 
-# Copy application code
-COPY . /app
+# Copy application code in layers for better caching
+# Copy code first (changes frequently)
+COPY app.py requirements.txt ./
+COPY yolo/*.py ./yolo/
+COPY yolo/config/ ./yolo/config/
+
+# Copy model weights last (changes rarely, large files)
+# This allows code changes without invalidating the model weights layer cache
+COPY yolo/model_weights/ ./yolo/model_weights/
 
 # Make sure scripts are in PATH
 ENV PATH=/root/.local/bin:$PATH
