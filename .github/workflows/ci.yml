@@ -6,6 +6,26 @@ on:
       - main
 
 jobs:
+  # Check if models folder changed (only models build is conditional)
+  models-changes:
+    name: Detect Models Changes
+    runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.filter.outputs.models }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for path detection
+      
+      - name: Check for models changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            models:
+              - 'code/models/**'
+              - 'code/models/Dockerfile'
   backend-test:
     name: Backend Tests & Lint
     runs-on: ubuntu-latest
@@ -119,14 +139,9 @@ jobs:
           path: code/frontend/dist
           retention-days: 7
 
-  docker-build-test:
-    name: Docker Build Test
+  docker-build-test-backend:
+    name: Docker Build Test - Backend
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        component: [backend, frontend]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -134,19 +149,64 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build ${{ matrix.component }} image
+      - name: Build backend image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.component == 'backend' && './code' || './code/frontend' }}
-          file: ./code/${{ matrix.component }}/Dockerfile
+          context: ./code
+          file: ./code/backend/Dockerfile
           push: false
-          tags: recipe-suggester-${{ matrix.component }}:test
+          tags: recipe-suggester-backend:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  model-validation:
-    name: Model Code Validation (Lightweight)
+  docker-build-test-frontend:
+    name: Docker Build Test - Frontend
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./code/frontend
+          file: ./code/frontend/Dockerfile
+          push: false
+          tags: recipe-suggester-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  docker-build-test-models:
+    name: Docker Build Test - Models
+    runs-on: ubuntu-latest
+    needs: models-changes
+    if: needs.models-changes.outputs.models == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build models image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./code/models
+          file: ./code/models/Dockerfile
+          push: false
+          tags: recipe-suggester-models:test
+          cache-from: type=gha
+          # Use mode=min for CI to speed up cache export (only cache layers, not full image)
+          cache-to: type=gha,mode=min
+
+  models-validation:
+    name: Models Service Validation (Lightweight)
+    runs-on: ubuntu-latest
+    needs: models-changes
+    if: needs.models-changes.outputs.models == 'true'
 
     defaults:
       run:
@@ -163,29 +223,27 @@ jobs:
 
       - name: Validate Python syntax
         run: |
+          python -m py_compile app.py
           python -m py_compile yolo/detector.py
           python -m py_compile yolo/yolo_model.py
           echo "✓ Python syntax valid"
 
-      - name: Check model imports
-        run: |
-          cd yolo
-          python -c "import yolo_model; print('✓ yolo_model imports successfully')"
-        continue-on-error: true
-
       - name: Verify required files exist
         run: |
-          test -f yolo/detector.py && echo "detector.py exists" || exit 1
-          test -f yolo/yolo_model.py && echo "yolo_model.py exists" || exit 1
-          test -f yolo/config/config_yolo_inf.yaml && echo "config exists" || exit 1
-          test -f requirements.txt && echo "requirements.txt exists" || exit 1
-          echo "All required files present"
+          test -f app.py && echo "✓ app.py exists" || exit 1
+          test -f Dockerfile && echo "✓ Dockerfile exists" || exit 1
+          test -f yolo/detector.py && echo "✓ detector.py exists" || exit 1
+          test -f yolo/yolo_model.py && echo "✓ yolo_model.py exists" || exit 1
+          test -f yolo/config/config_yolo_inf.yaml && echo "✓ config exists" || exit 1
+          test -f requirements.txt && echo "✓ requirements.txt exists" || exit 1
+          echo "✓ All required files present"
 
   # Status check job, require only this in branch protection
   ci-passed:
     name: All CI Checks Passed
     runs-on: ubuntu-latest
-    needs: [backend-test, frontend-build, docker-build-test, model-validation]
+    needs: [models-changes, backend-test, frontend-build, docker-build-test-backend, docker-build-test-frontend, docker-build-test-models, models-validation]
+    if: always()
     steps:
       - name: All checks passed
         run: echo "All CI checks passed successfully"

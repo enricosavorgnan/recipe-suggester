@@ -1,6 +1,8 @@
-# Recipe Suggester - ML Models
+# Recipe Suggester - Models Service
 
-Machine learning models for ingredient detection in the Recipe Suggester application. Uses YOLOv11 for real-time object detection to identify food ingredients from fridge images.
+**Ingredient detection microservice** for the Recipe Suggester application. Provides a REST API for detecting food ingredients from fridge images using YOLOv11.
+
+The choice of separating this from the backend was in order to have independent deployment and simplify the logic to connect backend with models (otherwise, local dev was different from deployed environment).
 
 ## Table of Contents
 
@@ -19,31 +21,31 @@ Machine learning models for ingredient detection in the Recipe Suggester applica
 
 ```
 models/
+├── app.py                            # FastAPI application (entry point)
+├── Dockerfile                        # Docker build configuration
+├── requirements.txt                  # Service dependencies (FastAPI + ML)
 ├── yolo/
 │   ├── config/
-│   │   ├── config_yolo_inf.yaml      # Inference configuration
-│   │   └── config_yolo_ft.yaml       # Fine-tuning configuration
+│   │   ├── config_yolo_inf.yaml     
+│   │   └── config_yolo_ft.yaml       
 │   ├── model_weights/
-│   │   ├── yolo_best.onnx            # Primary inference model (ONNX)
-│   │   ├── yolo_best.pt              # PyTorch format
-│   │   ├── yolo_last.pt              # Last training checkpoint
-│   │   └── yolo11n_base.pt           # Base model for fine-tuning
-│   ├── test_images/                  # Test images for unit tests
-│   ├── detector.py                   # Main interface - backend entry point
+│   │   ├── yolo_best.onnx            
+│   │   ├── yolo_best.pt              
+│   │   ├── yolo_last.pt              
+│   │   └── yolo11n_base.pt           
+│   ├── test_images/                  
+│   ├── detector.py                   # Detection logic (called by FastAPI)
 │   ├── yolo_model.py                 # YOLOClass implementation
-│   ├── finetuner.py                  # Fine-tuning utilities
-│   ├── createjson.py                 # JSON parsing utility
 │   └── yolo_test.py                  # Unit tests
 ├── test_images/                      # Sample fridge images for testing
-├── recipesystem_test.py              # Recipe system integration tests
-├── visionmodel_test.py               # Vision model tests
-├── requirements.txt                  # ML dependencies
 ├── .gitignore
 └── README.md
 ```
 
 ## Tech Stack
 
+- **FastAPI** - web framework for the API
+- **Uvicorn** - ASGI server for serving FastAPI
 - **YOLOv11** (Ultralytics) - Object detection framework
 - **ONNX Runtime** - Optimized model inference
 - **OpenCV** - Image processing
@@ -52,45 +54,36 @@ models/
 
 ## Design Overview
 
-### Architecture
+### Microservice Architecture
 
-The models folder provides **in-process ingredient detection** that runs directly within the backend:
+The models service is a **standalone FastAPI microservice** that provides ingredient detection via REST API. These are some of the
+features:
 
-- **No separate service**: The ML model runs embedded in the backend process
-- **Singleton pattern**: Model is loaded once and reused for all requests
-- **Async compatible**: Detection runs in background tasks to avoid blocking
+- **Separate service**: It runs independently on port 8001
+- **REST API**: Backend calls HTTP endpoints instead of direct function calls
+- **Singleton pattern**: YOLO model loaded once and reused across requests
+- **Shared volume**: Accesses images via shared filesystem with backend
 - **ONNX optimized**: Uses ONNX format for fast CPU/GPU inference
-
-### Detection Pipeline
-
-```
-Image Upload → Preprocessing → YOLO Inference → Result Parsing → JSON Output
-     │              │                │                │              │
-     │              │                │                │              └─ {"name": "Tomato", "confidence": 0.95}
-     │              │                │                └─ Extract classes, deduplicate
-     │              │                └─ Run ONNX model, get bounding boxes
-     │              └─ Resize to 640x640, normalize
-     └─ jpg, png, bmp supported
-```
+- **Stateless**: No database, purely computational service
 
 ### Integration with Backend
 
 ```
-FRONTEND                    BACKEND                         MODELS
+FRONTEND                    BACKEND                     MODELS SERVICE
     │                           │                              │
     │  Upload fridge image      │                              │
     ├──────────────────────────>│                              │
+    │                           │  Save to uploads/            │
     │                           │  Create IngredientsJob       │
+    │                           │                              │
+    │  Return job_id            │  POST /predict               │
+    │<──────────────────────────│  (async background task)     │
     │                           ├─────────────────────────────>│
     │                           │                              │
-    │  Return job_id            │  detect_ingredients()        │
-    │<──────────────────────────│  (async background task)     │
-    │                           │                              │
-    │  Poll job status          │                              │
-    ├──────────────────────────>│                              │
-    │                           │  Return ingredients list     │
+    │  Poll job status          │  Detect ingredients          │
+    ├──────────────────────────>│  Return JSON                 │
     │                           │<─────────────────────────────│
-    │  Ingredients detected     │                              │
+    │  Ingredients detected     │  Store in DB                 │
     │<──────────────────────────│                              │
 ```
 
@@ -99,50 +92,50 @@ FRONTEND                    BACKEND                         MODELS
 ### Prerequisites
 
 - Python 3.11+
-- Backend environment set up (see `code/backend/README.md`)
 - ~500MB disk space for model weights
+- Shared volume access to `uploads/` directory (for Docker deployment)
 
-### Installation
+### Local Development
 
-**You don't need to run this folder separately!** The models run in-process with the backend.
-
-1. **Install ML dependencies in your backend environment**
+1. **Install dependencies**
 
    ```bash
-   # From the repository root
-   pip install -r code/models/requirements.txt
+   cd code/models
+   pip install -r requirements.txt
    ```
 
 2. **Verify model weights exist**
 
-   The model weights should be present at:
    ```
-   code/models/yolo/model_weights/yolo_best.onnx
+   code/models/yolo/model_weights/yolo_best.pt
    ```
 
-3. **Run the backend as usual**
+3. **Run the service**
 
    ```bash
-   cd code/backend
-   uvicorn app.main:app --reload
+   # Start the FastAPI service on port 8001
+   uvicorn app:app --reload --port 8001
+
+   # Or use the direct Python command
+   python app.py
    ```
 
-   The YOLO model will be loaded automatically on the first detection request.
+4. **Access the API**
+   - **Service info**: http://localhost:8001/
+   - **Health check**: http://localhost:8001/health
+   - **API docs**: http://localhost:8001/docs
+   - **Prediction endpoint**: POST http://localhost:8001/predict
 
-### Standalone Testing
+### Docker Deployment
 
-To test the detection module independently:
+The models service is deployed as a container alongside backend and frontend:
 
 ```bash
-cd code/models/yolo
-
-# Run detection on a test image
-python -c "
-from detector import detect_ingredients
-result = detect_ingredients('test_images/fridge_3_items.png')
-print(result)
-"
+# Included in docker-compose.yml
+docker-compose up models
 ```
+
+See the root README.md for full deployment instructions.
 
 ## Configuration
 
@@ -204,52 +197,55 @@ Each ingredient appears only once (deduplicated), with its highest confidence sc
 
 ## API Interface
 
-### Main Function
+### REST Endpoints
 
-```python
-from detector import detect_ingredients
+#### `GET /health`
+Health check for monitoring.
 
-# Detect ingredients from an image
-result = detect_ingredients(image_path: str) -> list[dict]
+#### `POST /predict`
+Detect ingredients from an image.
+
+**Request:**
+```json
+{
+  "image_path": "uploads/recipes/fridge_photo.jpg"
+}
 ```
 
-**Parameters:**
-- `image_path` (str): Absolute or relative path to the image file
-
-**Returns:**
-- `list[dict]`: List of detected ingredients, each with `name` and `confidence` keys
-
-**Raises:**
-- `FileNotFoundError`: If the image path doesn't exist
-
-**Example:**
-
-```python
-from detector import detect_ingredients
-
-# Basic usage
-ingredients = detect_ingredients("uploads/recipes/fridge_photo.jpg")
-
-# Result
-# [
-#     {"name": "Tomato", "confidence": 0.95},
-#     {"name": "Eggs", "confidence": 0.88},
-#     {"name": "Milk", "confidence": 0.76}
-# ]
+**Response:**
+```json
+{
+  "ingredients": [
+    {"name": "Tomato", "confidence": 0.95},
+    {"name": "Lettuce", "confidence": 0.87},
+    {"name": "Cheese", "confidence": 0.82}
+  ],
+}
 ```
 
-### Supported Image Formats
+### Usage Examples
 
-- JPEG (`.jpg`, `.jpeg`)
-- PNG (`.png`)
-- BMP (`.bmp`)
+**Python (using requests):**
+```python
+import requests
 
-### Internal Components
+response = requests.post(
+    "http://localhost:8001/predict",
+    json={"image_path": "uploads/recipes/fridge_photo.jpg"}
+)
 
-| Module | Purpose |
-|--------|---------|
-| `detector.py` | Entry point - singleton model loading and detection interface |
-| `yolo_model.py` | `YOLOClass` - training, validation, and prediction methods |
+data = response.json()
+print(f"Found {data['count']} ingredients:")
+for ingredient in data['ingredients']:
+    print(f"  - {ingredient['name']}: {ingredient['confidence']:.2f}")
+```
+
+**cURL:**
+```bash
+curl -X POST "http://localhost:8001/predict" \
+  -H "Content-Type: application/json" \
+  -d '{"image_path": "uploads/recipes/fridge_photo.jpg"}'
+```
 
 ## Testing
 

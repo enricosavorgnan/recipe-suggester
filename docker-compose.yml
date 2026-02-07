@@ -19,6 +19,24 @@ services:
     networks:
       - recipe-network
 
+  # Models Service (from GitHub Container Registry)
+  models:
+    image: ghcr.io/${GITHUB_REPO_OWNER:-username}/recipe-suggester-models:latest
+    container_name: recipe-suggester-models
+    ports:
+      - "8001:8001"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - recipe-network
+    platform: linux/amd64
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:8001/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+
   # Backend API (from GitHub Container Registry)
   backend:
     image: ghcr.io/${GITHUB_REPO_OWNER:-username}/recipe-suggester-backend:latest
@@ -28,10 +46,16 @@ services:
     environment:
       # Override database host for Docker network
       POSTGRES_SERVER: postgres
+      # Override models service URL for Docker network
+      MODELS_SERVICE_URL: http://models:8001
     ports:
       - "8000:8000"
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
+        condition: service_healthy
+      models:
         condition: service_healthy
     networks:
       - recipe-network
@@ -51,6 +75,7 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
 
 networks:
   recipe-network:
