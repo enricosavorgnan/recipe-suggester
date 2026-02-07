@@ -68,8 +68,8 @@ This project uses GitHub Actions for continuous integration and deployment.
 
 Images are published to **GitHub Container Registry (ghcr.io)**:
 
-- Backend: `ghcr.io/<username>/recipe-suggester-backend:latest`
-- Frontend: `ghcr.io/<username>/recipe-suggester-frontend:latest`
+- Backend: `ghcr.io/enricosavorgnan/recipe-suggester-backend:latest`
+- Frontend: `ghcr.io/enricosavorgnan/recipe-suggester-frontend:latest`
 
 ## Tagging Strategy
 
@@ -84,7 +84,7 @@ After images are published by CD, deploy locally:
 
 1. **Set GitHub username in environment:**
    ```bash
-   echo "GITHUB_REPO_OWNER=your-github-username" >> .env
+   echo "GITHUB_REPO_OWNER=enricosavorgnan" >> .env
    ```
 
 2. **Authenticate with GitHub Container Registry:**
