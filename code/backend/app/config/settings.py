@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
 
+    # Models service settings
+    MODELS_SERVICE_URL: str = "http://localhost:8001"
+
     @property
     def DATABASE_URL(self) -> str:
         """Construct database URL from environment variables"""
