@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
+RUN pip install --no-cache-dir --user typing-extensions>=4.5.0
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir --user -r requirements.txt
 
