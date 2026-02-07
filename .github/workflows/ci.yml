@@ -125,7 +125,7 @@ jobs:
 
     strategy:
       matrix:
-        component: [backend, frontend]
+        component: [backend, frontend, models]
 
     steps:
       - name: Checkout code
@@ -137,15 +137,15 @@ jobs:
       - name: Build ${{ matrix.component }} image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.component == 'backend' && './code' || './code/frontend' }}
+          context: ${{ matrix.component == 'backend' && './code' || matrix.component == 'models' && './code/models' || './code/frontend' }}
           file: ./code/${{ matrix.component }}/Dockerfile
           push: false
           tags: recipe-suggester-${{ matrix.component }}:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  model-validation:
-    name: Model Code Validation (Lightweight)
+  models-validation:
+    name: Models Service Validation (Lightweight)
     runs-on: ubuntu-latest
 
     defaults:
@@ -163,29 +163,26 @@ jobs:
 
       - name: Validate Python syntax
         run: |
+          python -m py_compile app.py
           python -m py_compile yolo/detector.py
           python -m py_compile yolo/yolo_model.py
           echo "✓ Python syntax valid"
 
-      - name: Check model imports
-        run: |
-          cd yolo
-          python -c "import yolo_model; print('✓ yolo_model imports successfully')"
-        continue-on-error: true
-
       - name: Verify required files exist
         run: |
-          test -f yolo/detector.py && echo "detector.py exists" || exit 1
-          test -f yolo/yolo_model.py && echo "yolo_model.py exists" || exit 1
-          test -f yolo/config/config_yolo_inf.yaml && echo "config exists" || exit 1
-          test -f requirements.txt && echo "requirements.txt exists" || exit 1
-          echo "All required files present"
+          test -f app.py && echo "✓ app.py exists" || exit 1
+          test -f Dockerfile && echo "✓ Dockerfile exists" || exit 1
+          test -f yolo/detector.py && echo "✓ detector.py exists" || exit 1
+          test -f yolo/yolo_model.py && echo "✓ yolo_model.py exists" || exit 1
+          test -f yolo/config/config_yolo_inf.yaml && echo "✓ config exists" || exit 1
+          test -f requirements.txt && echo "✓ requirements.txt exists" || exit 1
+          echo "✓ All required files present"
 
   # Status check job, require only this in branch protection
   ci-passed:
     name: All CI Checks Passed
     runs-on: ubuntu-latest
-    needs: [backend-test, frontend-build, docker-build-test, model-validation]
+    needs: [backend-test, frontend-build, docker-build-test, models-validation]
     steps:
       - name: All checks passed
         run: echo "All CI checks passed successfully"
