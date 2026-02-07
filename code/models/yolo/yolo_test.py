@@ -3,7 +3,7 @@ import unittest
 import cv2
 import numpy as np
 import os
-from finetuner import YOLOClass
+from yolo_model import YOLOClass
 
 
 def is_valid_format(filename):
