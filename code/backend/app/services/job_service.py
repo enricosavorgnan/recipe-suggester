@@ -100,10 +100,11 @@ async def process_ingredients_async(job_id: int):
         image_path = (UPLOAD_DIR / recipe.image).resolve()
         if not image_path.exists():
             raise FileNotFoundError(f"Image file not found at path {image_path}")
-
+        print(f'image path: {image_path}')
+        
         models_service_url = f"{settings.MODELS_SERVICE_URL}/predict"
         print(f'model service setted: {models_service_url}')
-
+        
         async with httpx.AsyncClient(timeout=60.0) as client:
             with open(image_path, "rb") as f:
                 files = {"file": (recipe.image, f, "image/jpeg")}
