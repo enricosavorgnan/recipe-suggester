@@ -80,7 +80,6 @@ async def process_ingredients_async(job_id: int):
     """
     import httpx
     from app.db.database import SessionLocal
-    from app.services.ml_service import detect_ingredients_from_image
     from app.config.settings import settings
 
     db = SessionLocal()
