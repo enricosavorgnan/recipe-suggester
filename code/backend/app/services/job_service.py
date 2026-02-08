@@ -194,7 +194,7 @@ async def process_recipe_async(job_id: int, ingredients: list[dict]):
             raise ValueError("No ingredients provided")
 
         # Generate recipe using LLM
-        recipe_dict = generate_recipe_from_ingredients(ingredient_names)
+        recipe_dict = await generate_recipe_from_ingredients(ingredient_names)
 
         job = db.query(RecipeJob).filter(RecipeJob.id == job_id).first()
         if job:
