@@ -1,9 +1,9 @@
 import json
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 from app.config.settings import settings
 from app.config.prompts import get_recipe_generation_prompt, RECIPE_SYSTEM_PROMPT
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 def generate_recipe_from_ingredients(ingredients: list[str]) -> dict:
