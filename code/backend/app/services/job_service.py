@@ -88,10 +88,12 @@ async def process_ingredients_async(job_id: int):
         job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
         if not job:
             return
-
+        print(f'job successfully retrieved: {job}')
+        
         recipe = db.query(Recipe).filter(Recipe.id == job.recipe_id).first()
         if not recipe or not recipe.image:
             raise ValueError("Recipe or image not found")
+        print(f'recipe successfully queried: {recipe}')
 
         # images are stored in uploads/recipes/
         from app.services.recipe_service import UPLOAD_DIR
@@ -100,6 +102,7 @@ async def process_ingredients_async(job_id: int):
             raise FileNotFoundError(f"Image file not found at path {image_path}")
 
         models_service_url = f"{settings.MODELS_SERVICE_URL}/predict"
+        print(f'model service setted: {model_service_url}')
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             with open(image_path, "rb") as f:
@@ -108,9 +111,9 @@ async def process_ingredients_async(job_id: int):
 
             response.raise_for_status()
             result = response.json()
-
+        
         ingredients_data = result.get("ingredients", [])
-
+        print(f'ingredients retrieved: {ingredients_data}')
         # Update job with results
         job.status = JobStatus.completed
         job.ingredients_json = json.dumps(ingredients_data)
