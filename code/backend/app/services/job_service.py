@@ -1,4 +1,5 @@
 import os
+import httpx
 from pathlib import Path
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, BackgroundTasks
@@ -74,7 +75,7 @@ def update_ingredients_json(db: Session, recipe_id: int, user_id: int, ingredien
 
 async def process_ingredients_async(job_id: int):
     """
-    Async task that calls the models service for ingredient detection from image.
+    Async task that processes ML model for ingredient detection from image.
     Updates job status when done.
     """
     import httpx
@@ -93,50 +94,29 @@ async def process_ingredients_async(job_id: int):
             raise ValueError("Recipe or image not found")
 
         # images are stored in uploads/recipes/
-        # Use absolute path so models service can find it when running locally
         from app.services.recipe_service import UPLOAD_DIR
-        image_path = str((UPLOAD_DIR / recipe.image).resolve())
+        image_path = (UPLOAD_DIR / recipe.image).resolve()
+        if not image_path.exists():
+            raise FileNotFoundError(f"Image file not found at path {image_path}")
 
-        # Call models service via HTTP
         models_service_url = f"{settings.MODELS_SERVICE_URL}/predict"
-        print(f"[Models Service] Calling {models_service_url} for image: {image_path}")
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                models_service_url,
-                json={"image_path": image_path}
-            )
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            with open(image_path, "rb") as f:
+                files = {"file": (recipe.image, f, "image/jpeg")}
+                response = await client.post(models_service_url, files=files)
+
             response.raise_for_status()
             result = response.json()
 
-        # Extract ingredients from response
         ingredients_data = result.get("ingredients", [])
-        print(f"[Models Service] Detected {len(ingredients_data)} ingredients")
-
-        ingredients_json_str = json.dumps(ingredients_data)
 
         # Update job with results
         job.status = JobStatus.completed
-        job.ingredients_json = ingredients_json_str
+        job.ingredients_json = json.dumps(ingredients_data)
         job.end_time = datetime.utcnow()
         db.commit()
-        print(f"[DEBUG] Job {job.id} completed successfully")
 
-    # set the job as failed in the db of something goes wrong
-    except httpx.HTTPStatusError as e:
-        print(f"[Models Service] HTTP error: {e.response.status_code} - {e.response.text}")
-        job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
-        if job:
-            job.status = JobStatus.failed
-            job.end_time = datetime.utcnow()
-            db.commit()
-    except httpx.RequestError as e:
-        print(f"[Models Service] Request error: {e}")
-        job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
-        if job:
-            job.status = JobStatus.failed
-            job.end_time = datetime.utcnow()
-            db.commit()
     except Exception as e:
         print(f"Error in process_ingredients_async: {e}")
         job = db.query(IngredientsJob).filter(IngredientsJob.id == job_id).first()
