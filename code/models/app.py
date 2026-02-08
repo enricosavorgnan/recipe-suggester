@@ -4,8 +4,10 @@ Provides ingredient detection as a microservice.
 """
 import sys
 import logging
+import shutil
+import os
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -115,11 +117,18 @@ async def predict(request: PredictRequest):
     Raises:
         HTTPException: If image not found or detection fails
     """
-    logger.info(f"Received prediction request for image: {request.image_path}")
+
+    temp_filename = f"temp_{file.filename}" if file.filename else "temp_image.jpg"
+    temp_path = f"/tmp/{temp_filename}"
+    logger.info(f"Received file upload. Saving to: {temp_path}")
+
 
     try:
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
         # Call the detector
-        ingredients_list = detect_ingredients(request.image_path)
+        ingredients_list = detect_ingredients(temp_path)
 
         # Format response
         response = PredictResponse(
@@ -142,6 +151,9 @@ async def predict(request: PredictRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}"
         )
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 if __name__ == "__main__":
