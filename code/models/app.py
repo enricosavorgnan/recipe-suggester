@@ -102,14 +102,14 @@ async def health_check():
 
 
 @app.post("/predict", response_model=PredictResponse, status_code=status.HTTP_200_OK)
-async def predict(request: PredictRequest):
+async def predict(file: UploadFile = File(...)):
     """
     Detect ingredients from an image using YOLO model.
 
     The image should be accessible via a shared volume between backend and models service.
 
     Args:
-        request: PredictRequest containing the image_path
+        request: UploadFile containing the image
 
     Returns:
         PredictResponse with detected ingredients and their confidence scores
