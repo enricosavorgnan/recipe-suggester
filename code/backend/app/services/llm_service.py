@@ -20,7 +20,7 @@ def generate_recipe_from_ingredients(ingredients: list[str]) -> dict:
         Exception: If LLM call fails (API error, rate limit, invalid response, etc.)
     """
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
                 {
