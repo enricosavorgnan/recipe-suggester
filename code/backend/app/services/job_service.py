@@ -102,7 +102,7 @@ async def process_ingredients_async(job_id: int):
             raise FileNotFoundError(f"Image file not found at path {image_path}")
 
         models_service_url = f"{settings.MODELS_SERVICE_URL}/predict"
-        print(f'model service setted: {model_service_url}')
+        print(f'model service setted: {models_service_url}')
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             with open(image_path, "rb") as f:
