@@ -6,7 +6,7 @@ from app.config.prompts import get_recipe_generation_prompt, RECIPE_SYSTEM_PROMP
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 
-def generate_recipe_from_ingredients(ingredients: list[str]) -> dict:
+async def generate_recipe_from_ingredients(ingredients: list[str]) -> dict:
     """
     Generate a recipe using OpenAI GPT based on a list of ingredients.
 
