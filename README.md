@@ -2,6 +2,9 @@
 
 A smart recipe recommendation system that helps you create recipes from the ingredients in your fridge. Take a photo of your fridge, and the app will detect the ingredients and suggest complete recipes using AI.
 
+The project is currently hosted on the net is available at the [following link](https://recipe-suggester-frontend-production.up.railway.app).
+A public available video of the working product is available at the [following link](https://drive.google.com/file/d/1Wyz_gT-FHCGT5w7Ww_xG_3vV4ZQyfCFI/view?usp=sharing)
+
 **Course Project:** 440MI - Machine Learning Operations @ University of Trieste
 
 **Team members:**
