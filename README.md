@@ -4,7 +4,7 @@ A smart recipe recommendation system that helps you create recipes from the ingr
 
 **Course Project:** 440MI - Machine Learning Operations @ University of Trieste
 
-**Students:**
+**Team members:**
 - Baratto Luca
 - Moro Tommaso
 - Savorgnan Enrico
@@ -260,7 +260,7 @@ recipe-suggester/
 On every pull request to `main`:
 - **Backend**: Unit tests, linting (Ruff), test coverage
 - **Frontend**: TypeScript type checking, build validation
-- **Models**: Python syntax validation, file checks
+- **Models**: Python syntax validation, file checks, model quality
 - **Docker**: Build validation for all 3 services (backend, frontend, models)
 
 All checks must pass before merging.
